@@ -64,6 +64,17 @@ egg info --egg <egg>
 
 Use `egg <command> -h` to see all options.
 
+### Runtime Command Overrides
+
+The commands used for each cell language during `egg hatch` can be
+customized via environment variables. Set `EGG_CMD_PYTHON`,
+`EGG_CMD_R`, or `EGG_CMD_BASH` to the path of the desired executable to
+override the defaults.
+
+```bash
+EGG_CMD_PYTHON=/opt/python3/bin/python egg hatch --egg demo.egg
+```
+
 ### Example Build Walkthrough
 
 Below is a minimal walkthrough using the placeholder implementation:
