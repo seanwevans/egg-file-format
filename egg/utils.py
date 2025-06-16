@@ -5,8 +5,20 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import sys
+import logging
+from importlib.metadata import entry_points
 
-__all__ = ["_is_relative_to", "get_lang_command", "DEFAULT_LANG_COMMANDS"]
+__all__ = [
+    "_is_relative_to",
+    "get_lang_command",
+    "DEFAULT_LANG_COMMANDS",
+    "load_plugins",
+]
+
+logger = logging.getLogger(__name__)
+
+AGENT_PLUGIN_GROUP = "egg.agents"
+RUNTIME_PLUGIN_GROUP = "egg.runtimes"
 
 
 def _is_relative_to(path: Path, base: Path) -> bool:
@@ -35,3 +47,26 @@ def get_lang_command(lang: str) -> list[str] | None:
     if override:
         return [override]
     return DEFAULT_LANG_COMMANDS.get(lang)
+
+
+def load_plugins() -> None:
+    """Discover and register runtime and agent plug-ins."""
+
+    eps = entry_points()
+
+    for ep in eps.select(group=RUNTIME_PLUGIN_GROUP):
+        try:
+            handler = ep.load()
+            extra = handler()
+            if isinstance(extra, dict):
+                DEFAULT_LANG_COMMANDS.update(extra)
+            logger.debug("[plugins] loaded runtime %s", ep.name)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Failed loading runtime plug-in %s: %s", ep.name, exc)
+
+    for ep in eps.select(group=AGENT_PLUGIN_GROUP):
+        try:
+            ep.load()()
+            logger.debug("[plugins] loaded agent %s", ep.name)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Failed loading agent plug-in %s: %s", ep.name, exc)

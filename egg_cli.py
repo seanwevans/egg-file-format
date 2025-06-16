@@ -17,7 +17,7 @@ from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
 from egg.precompute import precompute_cells
-from egg.utils import get_lang_command
+from egg.utils import get_lang_command, load_plugins
 
 
 __version__ = "0.1.0"
@@ -145,6 +145,7 @@ def main(argv: list[str] | None = None) -> None:
         argv = sys.argv[1:]
 
     check_platform()
+    load_plugins()
 
     global_parser = argparse.ArgumentParser(add_help=False)
     global_parser.add_argument(
