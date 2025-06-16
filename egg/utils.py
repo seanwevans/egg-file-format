@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+
 def _is_relative_to(path: Path, base: Path) -> bool:
     """Return True if *path* is relative to *base*.
 
