@@ -7,7 +7,11 @@ import pytest  # noqa: F401
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from egg.sandboxer import build_microvm_image, launch_microvm, prepare_images  # noqa: E402
+from egg.sandboxer import (
+    build_microvm_image,
+    launch_microvm,
+    prepare_images,
+)  # noqa: E402
 from egg.manifest import Manifest, Cell  # noqa: E402
 
 
