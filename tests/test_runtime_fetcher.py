@@ -149,3 +149,25 @@ dependencies:
     thread.join()
     assert paths == [expected]
     assert expected.read_text() == "rimage"
+
+
+def test_registry_traversal_rejected(monkeypatch, tmp_path: Path) -> None:
+    """Path traversal in container specs should raise ``ValueError``."""
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - ../evil:1
+"""
+    )
+
+    with pytest.raises(ValueError):
+        fetch_runtime_blocks(manifest)
