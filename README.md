@@ -45,6 +45,22 @@ python egg_cli.py build  # assemble an egg (placeholder)
 python egg_cli.py hatch  # run an egg (placeholder)
 ```
 
+### Example Build Walkthrough
+
+Once the real build pipeline lands, you will be able to assemble the sample
+notebook into an `.egg` file with:
+
+```bash
+python egg_cli.py build examples/manifest.yaml
+```
+
+This command will read the manifest, gather runtimes and assets, and emit a
+single `demo.egg` file. For details about the resulting layout, see
+[FORMAT.md#example-layout](FORMAT.md#example-layout). Progress on the builder
+pipeline is tracked in the
+[v0.5 – Builder Pipeline](ROADMAP.md#v05--builder-pipeline) section of the
+roadmap.
+
 ---
 
 ## License
