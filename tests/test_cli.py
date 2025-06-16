@@ -1,14 +1,12 @@
 import os
 import sys
-
+import zipfile
+import hashlib
+import yaml
 import pytest
 import logging
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-import zipfile
-import hashlib
-import yaml
-
 import egg_cli  # noqa: E402
 
 
@@ -35,7 +33,6 @@ def test_build(monkeypatch, tmp_path, caplog):
         f"-> {output} (placeholder)"
     )
     assert expected in caplog.text
-
 
     assert output.is_file()
     with zipfile.ZipFile(output) as zf:
@@ -140,4 +137,3 @@ def test_deterministic_build(monkeypatch, tmp_path):
     egg_cli.main()
 
     assert out1.read_bytes() == out2.read_bytes()
-

@@ -3,7 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from egg.hashing import sha256_file, compute_hashes, write_hashes_file, load_hashes, verify_hashes
+from egg.hashing import (
+    sha256_file,
+    compute_hashes,
+    write_hashes_file,
+    load_hashes,
+    verify_hashes,
+)
 
 
 def test_sha256_file(tmp_path: Path) -> None:
