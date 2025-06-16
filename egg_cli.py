@@ -1,10 +1,11 @@
 import argparse
 import logging
+import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import zipfile
-import sys
-import shutil
 from pathlib import Path
 
 from egg.composer import compose
@@ -16,11 +17,19 @@ __version__ = "0.1.0"
 logger = logging.getLogger(__name__)
 
 # Mapping of supported languages to their command prefixes.
-LANG_COMMANDS = {
+DEFAULT_LANG_COMMANDS = {
     "python": [sys.executable],
     "r": ["Rscript"],
     "bash": ["bash"],
 }
+
+
+def get_lang_command(lang: str) -> list[str] | None:
+    """Return the command list for ``lang``, honoring environment overrides."""
+    override = os.getenv(f"EGG_CMD_{lang.upper()}")
+    if override:
+        return [override]
+    return DEFAULT_LANG_COMMANDS.get(lang)
 
 
 def build(args: argparse.Namespace) -> None:
@@ -60,7 +69,7 @@ def hatch(args: argparse.Namespace) -> None:
         for cell in manifest.cells:
             src = Path(tmpdir) / cell.source
             lang = cell.language.lower()
-            base_cmd = LANG_COMMANDS.get(lang)
+            base_cmd = get_lang_command(lang)
             if base_cmd is None:
                 raise SystemExit(f"Unsupported language: {cell.language}")
             cmd = base_cmd[0]
