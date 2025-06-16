@@ -19,6 +19,7 @@ agents are implemented in this prototype.  They live in
   - Hashes all blobs, signs the manifest for audit/provenance.
 - **Chunker/Index Agent**
   - Builds static trunk, offset tables, and "heap of heaps" structure.
+  - Splits archives into fixed-size chunks and records offsets for deterministic indexing.
 - **Precompute Agent**
   - Optionally runs code to precompute cell outputs for instant preview.
 - **Test Agent**
