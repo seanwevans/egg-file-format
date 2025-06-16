@@ -253,6 +253,27 @@ cells:
     assert str(manifest) in msg
 
 
+def test_build_missing_manifest(monkeypatch, tmp_path):
+    """Building should raise FileNotFoundError when manifest is missing."""
+    manifest = tmp_path / "does_not_exist.yaml"
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(output),
+        ],
+    )
+    with pytest.raises(FileNotFoundError) as exc:
+        egg_cli.main()
+    assert str(manifest) in str(exc.value)
+
+
 def test_version_option(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "--version"])
     with pytest.raises(SystemExit):
