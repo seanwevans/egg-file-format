@@ -9,7 +9,7 @@ import subprocess
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
-from egg.hashing import verify_archive
+from egg.hashing import verify_archive  # noqa: E402
 
 
 def test_build(monkeypatch, tmp_path, caplog):
@@ -169,7 +169,7 @@ cells:
         egg_cli.main()
 
 
-def test_requires_subcommand(monkeypatch):
+def test_requires_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit) as exc:
         egg_cli.main()
@@ -395,6 +395,23 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
 
     monkeypatch.setattr(egg_cli, "compose", tamper)
 
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert "Hash verification failed" in str(exc.value)
+
 
 def test_preserve_relative_paths(monkeypatch, tmp_path):
     """Files in subdirectories should retain their paths inside the archive."""
@@ -427,15 +444,12 @@ cells:
             "egg_cli.py",
             "build",
             "--manifest",
-            os.path.join("examples", "manifest.yaml"),
+            str(manifest),
             "--output",
             str(output),
         ],
     )
-
-    with pytest.raises(SystemExit) as exc:
-        egg_cli.main()
-    assert "Hash verification failed" in str(exc.value)
+    egg_cli.main()
 
     with zipfile.ZipFile(output) as zf:
         names = set(zf.namelist())
