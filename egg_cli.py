@@ -37,7 +37,7 @@ def main() -> None:
         None.
     """
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
     parser_build.set_defaults(func=build)
@@ -46,10 +46,7 @@ def main() -> None:
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        parser.print_help()
+    args.func(args)
 
 
 if __name__ == "__main__":
