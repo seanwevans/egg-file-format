@@ -18,12 +18,13 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 logger = logging.getLogger(__name__)
 
 
-def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path]:
+def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
     """Return absolute paths to runtime dependencies listed in ``manifest_path``.
 
-    Currently only local file paths listed under a ``dependencies`` field are
-    supported. Each path must be relative to the manifest directory and must
-    exist on disk.
+    Dependencies can either be local file paths or container-style image
+    identifiers like ``python:3.11``. Paths must be relative to the manifest
+    directory and must exist on disk. Entries containing a colon are returned
+    verbatim without any file-system checks.
 
     Parameters
     ----------
@@ -32,8 +33,8 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path]:
 
     Returns
     -------
-    List[Path]
-        Absolute paths to the dependency files.
+    List[Path | str]
+        Absolute paths to dependency files or container image strings.
 
     Raises
     ------
@@ -54,11 +55,15 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path]:
         raise ValueError("'dependencies' must be a list")
 
     manifest_dir = manifest_path.parent.resolve()
-    resolved: List[Path] = []
+    resolved: List[Path | str] = []
 
     for dep in deps:
         if not isinstance(dep, str):
             raise ValueError("dependency entries must be strings")
+        if ":" in dep:
+            resolved.append(dep)
+            logger.debug("[runtime_fetcher] Recorded container spec %s", dep)
+            continue
         p = Path(dep)
         if p.is_absolute():
             raise ValueError(f"Absolute dependency paths are not allowed: {dep}")

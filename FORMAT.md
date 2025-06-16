@@ -60,6 +60,11 @@ The builder consumes a YAML manifest. The minimal fields are:
 | `created`   | Timestamp when the egg was built.                     | Stored in the manifest header.         |
 | `license`   | SPDX license identifier for the notebook content.     | Stored in the manifest.                |
 | `dependencies` | List of runtime block identifiers.                 | Guides the runtime block fetcher.      |
+| `permissions` | Mapping of permission names to boolean values.      | Enforced by the sandboxer at hatch time. |
+
+Dependency entries may be relative file paths or container image
+specifications like ``python:3.11``. Paths are validated to exist on disk while
+entries containing a colon are treated as remote container images.
 
 During the build step the sources listed under `cells` are copied into
 the `.egg` file and referenced by the manifest. Runtime blocks and other

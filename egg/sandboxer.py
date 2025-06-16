@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import tempfile
 from pathlib import Path
@@ -60,7 +61,9 @@ def prepare_images(
         if lang in images:
             continue
         img_dir = base / f"{lang}-image"
+
         build_microvm_image(lang, img_dir)
+
         logger.info("[sandboxer] prepared %s image at %s", lang, img_dir)
         images[lang] = img_dir
     return images

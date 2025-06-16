@@ -1,6 +1,7 @@
 name: "Advanced Notebook"
 description: "Example demonstrating dependencies, permissions, and mixed languages"
 dependencies:
+  # Container images referenced by language:version
   - python:3.11
   - r:4.3
   - bash:5
