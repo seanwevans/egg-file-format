@@ -10,7 +10,7 @@ from .hashing import (
     verify_hashes,
     write_hashes_file,
 )
-from .sandboxer import prepare_images
+from .sandboxer import prepare_images, launch_microvm
 from .precompute import precompute_cells
 
 __all__ = [
@@ -23,5 +23,6 @@ __all__ = [
     "verify_hashes",
     "verify_archive",
     "prepare_images",
+    "launch_microvm",
     "precompute_cells",
 ]
