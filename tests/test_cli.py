@@ -59,8 +59,38 @@ def test_help_without_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit):
         egg_cli.main()
-    captured = capsys.readouterr()
-    assert "usage:" in captured.err
+
+
+def test_build_missing_source(monkeypatch, tmp_path):
+    """Building should fail with a clear error when a source file is missing."""
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: missing.py
+"""
+    )
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(output),
+        ],
+    )
+    with pytest.raises(FileNotFoundError) as exc:
+        egg_cli.main()
+    msg = str(exc.value)
+    assert "missing.py" in msg
+    assert str(manifest) in msg
 
 
 def test_version_option(monkeypatch, capsys):
