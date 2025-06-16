@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 from pathlib import Path
 from typing import Dict, Iterable
 
@@ -12,6 +13,9 @@ import yaml
 
 
 _CHUNK_SIZE = 8192
+
+# Simplified signing key for demonstration/testing purposes
+SIGNING_KEY = b"egg-signing-key"
 
 
 def sha256_file(path: Path) -> str:
@@ -73,6 +77,12 @@ def load_hashes(path: Path) -> Dict[str, str]:
         return yaml.safe_load(f) or {}
 
 
+def sign_hashes(path: Path, *, key: bytes = SIGNING_KEY) -> str:
+    """Return an HMAC-SHA256 signature of ``path``."""
+    data = path.read_bytes()
+    return hmac.new(key, data, hashlib.sha256).hexdigest()
+
+
 def verify_hashes(directory: Path, hashes: Dict[str, str]) -> bool:
     """Verify that files in ``directory`` match expected ``hashes``."""
     for name, expected in hashes.items():
@@ -98,9 +108,17 @@ def verify_archive(archive: Path) -> bool:
     with zipfile.ZipFile(archive) as zf:
         try:
             with zf.open("hashes.yaml") as f:
-                hashes = yaml.safe_load(f) or {}
+                hashes_bytes = f.read()
+            with zf.open("hashes.sig") as f:
+                signature = f.read().decode().strip()
         except KeyError:
             return False
+
+        expected_sig = hmac.new(SIGNING_KEY, hashes_bytes, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected_sig):
+            return False
+
+        hashes = yaml.safe_load(hashes_bytes) or {}
 
         for name, expected in hashes.items():
             try:
@@ -114,6 +132,7 @@ def verify_archive(archive: Path) -> bool:
         # Ensure no unverified files are present in the archive
         names = set(zf.namelist())
         names.discard("hashes.yaml")
+        names.discard("hashes.sig")
         if names != set(hashes.keys()):
             return False
 

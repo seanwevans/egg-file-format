@@ -15,7 +15,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
         "PyYAML is required to use egg composer. Install with 'pip install PyYAML'"
     ) from exc
 
-from .hashing import compute_hashes, write_hashes_file
+from .hashing import compute_hashes, write_hashes_file, sign_hashes, SIGNING_KEY
 
 
 def _collect_sources(manifest: dict) -> Iterable[Path]:
@@ -62,11 +62,14 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
             shutil.copy2(src, dest)
             copied.append(dest)
 
-        # write hashes file
+        # write hashes file and signature
         hashes = compute_hashes(copied, base_dir=tmpdir_path)
         hashes_path = tmpdir_path / "hashes.yaml"
         write_hashes_file(hashes, hashes_path)
-        copied.append(hashes_path)
+        sig = sign_hashes(hashes_path, key=SIGNING_KEY)
+        sig_path = tmpdir_path / "hashes.sig"
+        sig_path.write_text(sig, encoding="utf-8")
+        copied.extend([hashes_path, sig_path])
 
         with zipfile.ZipFile(output_path, "w") as zf:
             for file in sorted(copied, key=lambda p: str(p.relative_to(tmpdir_path))):
