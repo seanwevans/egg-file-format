@@ -146,7 +146,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser_build = subparsers.add_parser("build", help="Build an egg file")
+    parser_build = subparsers.add_parser(
+        "build", help="Build an egg file", parents=[global_parser]
+    )
 
     parser_build.add_argument(
         "-m",
@@ -173,7 +175,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser_build.set_defaults(func=build)
 
-    parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
+    parser_hatch = subparsers.add_parser(
+        "hatch", help="Hatch an egg file", parents=[global_parser]
+    )
     parser_hatch.add_argument(
         "-e", "--egg", default="out.egg", help="Egg file to hatch"
     )
@@ -182,7 +186,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser_hatch.set_defaults(func=hatch)
 
-    parser_verify = subparsers.add_parser("verify", help="Verify an egg archive")
+    parser_verify = subparsers.add_parser(
+        "verify", help="Verify an egg archive", parents=[global_parser]
+    )
     parser_verify.add_argument(
         "-e",
         "--egg",
@@ -191,7 +197,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser_verify.set_defaults(func=verify)
 
-    parser_info = subparsers.add_parser("info", help="Show manifest summary")
+    parser_info = subparsers.add_parser(
+        "info", help="Show manifest summary", parents=[global_parser]
+    )
     parser_info.add_argument(
         "-e",
         "--egg",
@@ -200,11 +208,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser_info.set_defaults(func=info)
 
-    args, remaining = parser.parse_known_args(argv)
-    if remaining:
-        extras = global_parser.parse_args(remaining)
-        for key, value in vars(extras).items():
-            setattr(args, key, value)
+    args, _ = parser.parse_known_args(argv)
+    extras, _ = global_parser.parse_known_args(argv)
+    for key, value in vars(extras).items():
+        setattr(args, key, value)
     if args.verbose >= 2:
         level = logging.DEBUG
     elif args.verbose == 1:
