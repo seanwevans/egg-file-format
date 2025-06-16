@@ -1,8 +1,18 @@
-"""Agent for fetching interpreter/runtime blocks referenced in a manifest."""
+"""Agent for fetching interpreter/runtime blocks referenced in a manifest.
+
+In addition to loading local files, this module can download container images
+from an HTTP registry.  The registry base URL is looked up from the
+``EGG_REGISTRY_URL`` environment variable or a ``~/.egg_registry`` file if the
+environment variable is unset.
+"""
 
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+from urllib.parse import quote
+from urllib.request import urlopen
 from pathlib import Path
 from typing import List
 
@@ -16,6 +26,30 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
     ) from exc
 
 logger = logging.getLogger(__name__)
+
+
+def _get_registry_url() -> str | None:
+    """Return the container registry base URL from env or config file."""
+    url = os.getenv("EGG_REGISTRY_URL")
+    if url:
+        return url
+    conf = Path.home() / ".egg_registry"
+    if conf.is_file():
+        return conf.read_text().strip()
+    return None
+
+
+def _download_container(image: str, dest: Path, base_url: str) -> Path:
+    """Download ``image`` from ``base_url`` to ``dest``."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.is_file():
+        logger.debug("[runtime_fetcher] using cached %s", dest)
+        return dest
+    url = f"{base_url.rstrip('/')}/{quote(image)}.img"
+    logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
+    with urlopen(url) as resp, open(dest, "wb") as fh:
+        shutil.copyfileobj(resp, fh)
+    return dest
 
 
 def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
@@ -60,13 +94,18 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
 
     manifest_dir = manifest_path.parent.resolve()
     resolved: List[Path | str] = []
+    registry = _get_registry_url()
 
     for dep in deps:
         if not isinstance(dep, str):
             raise ValueError("dependency entries must be strings")
         if ":" in dep:
-            resolved.append(dep)
-            logger.debug("[runtime_fetcher] Recorded container spec %s", dep)
+            if registry:
+                dest = manifest_dir / f"{dep.replace(':', '_')}.img"
+                resolved.append(_download_container(dep, dest, registry))
+            else:
+                resolved.append(dep)
+                logger.debug("[runtime_fetcher] Recorded container spec %s", dep)
             continue
         p = Path(dep)
         if p.is_absolute():
