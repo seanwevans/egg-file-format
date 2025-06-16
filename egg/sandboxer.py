@@ -15,12 +15,22 @@ import json
 import logging
 import tempfile
 import subprocess
+import platform
 from pathlib import Path
 from typing import Dict
 
 from .manifest import Manifest
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_PLATFORMS = {"Linux", "Darwin", "Windows"}
+
+
+def check_platform() -> None:
+    """Raise ``RuntimeError`` if running on an unsupported platform."""
+    current = platform.system()
+    if current not in SUPPORTED_PLATFORMS:
+        raise RuntimeError(f"Unsupported platform: {current}")
 
 
 def build_microvm_image(language: str, dest: Path) -> None:
@@ -50,6 +60,21 @@ def build_microvm_image(language: str, dest: Path) -> None:
     logger.debug("[sandboxer] wrote %s and %s", conf_json, conf_yaml)
 
 
+def build_container_image(language: str, dest: Path) -> None:
+    """Create a placeholder container image configuration for ``language``."""
+
+    dest.mkdir(parents=True, exist_ok=True)
+    config = {
+        "language": language,
+        "runtime": "container",
+    }
+    conf_json = dest / "container.json"
+    conf_json.write_text(json.dumps(config), encoding="utf-8")
+    conf_yaml = dest / "container.conf"
+    conf_yaml.write_text(f"language: {language}\n", encoding="utf-8")
+    logger.debug("[sandboxer] wrote %s and %s", conf_json, conf_yaml)
+
+
 def prepare_images(
     manifest: Manifest, base_dir: Path | str | None = None
 ) -> Dict[str, Path]:
@@ -68,6 +93,7 @@ def prepare_images(
     Dict[str, Path]
         Mapping of language name to created image directory path.
     """
+    check_platform()
     if base_dir is None:
         base = Path(tempfile.mkdtemp())
     else:
@@ -78,8 +104,10 @@ def prepare_images(
         if lang in images:
             continue  # pragma: no cover
         img_dir = base / f"{lang}-image"
-
-        build_microvm_image(lang, img_dir)
+        if platform.system() == "Linux":
+            build_microvm_image(lang, img_dir)
+        else:
+            build_container_image(lang, img_dir)
 
         logger.info("[sandboxer] prepared %s image at %s", lang, img_dir)
         images[lang] = img_dir
@@ -102,4 +130,13 @@ def launch_microvm(image_dir: Path) -> subprocess.CompletedProcess:
     config = image_dir / "microvm.json"
     cmd = ["firecracker", "--config-file", str(config)]
     logger.info("[sandboxer] launching Firecracker: %s", " ".join(cmd))
+    return subprocess.run(cmd, check=True)
+
+
+def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
+    """Launch a container using ``image_dir/container.json``."""
+
+    config = image_dir / "container.json"
+    cmd = ["docker", "run", json.loads(config.read_text())["language"]]
+    logger.info("[sandboxer] launching container: %s", " ".join(cmd))
     return subprocess.run(cmd, check=True)
