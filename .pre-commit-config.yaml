@@ -9,8 +9,21 @@ repos:
       - id: flake8
   - repo: local
     hooks:
+      - id: pylint
+        name: pylint
+        entry: bash -c 'pylint egg egg_cli.py | tee pylint.log || true'
+        language: system
+        pass_filenames: false
       - id: pytest
         name: pytest
-        entry: pytest -q
+        entry: >-
+          pytest --cov=egg --cov=egg_cli --cov-report=xml \
+                 --cov-report=term-missing:skip-covered -q
         language: system
         types: [python]
+      - id: update-badges
+        name: update-badges
+        entry: python scripts/update_badges.py
+        language: system
+        pass_filenames: false
+        always_run: true

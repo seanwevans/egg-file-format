@@ -25,35 +25,12 @@ jobs:
         pip install -e .
     - name: Run pre-commit
       run: pre-commit run --all-files
-    - name: Commit formatted code
+    - name: Commit results
       if: github.event_name == 'push'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        black .
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
-        git commit -am "chore: format with black" || echo "No changes to commit"
-        git push
-    - name: Lint
-      run: |
-        flake8
-        black --check .
-    - name: Pylint
-      continue-on-error: true
-      run: |
-        pylint egg egg_cli.py | tee pylint.log
-    - name: Run tests with coverage
-      run: |
-        pytest --cov=egg --cov=egg_cli --cov-report=xml \
-               --cov-report=term-missing:skip-covered -q
-    - name: Update badges
-      if: github.event_name == 'push'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        python scripts/update_badges.py
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-        git commit -am "chore: update badges" || echo "No badge updates"
+        git commit -am "chore: apply pre-commit fixes" || echo "No changes to commit"
         git push

@@ -52,9 +52,10 @@ Use `egg <command> -h` to see all options. Runtime commands can be overridden wi
 
 ```bash
 pip install .       # installs PyYAML and the CLI
-pytest
+pre-commit run --all-files
 ```
-Optional coverage can be gathered with `pytest --cov=egg --cov=egg_cli`.
+This formats code, lints with flake8 and pylint, runs tests with coverage,
+and updates the README badges.
 
 ---
 

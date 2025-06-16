@@ -11,3 +11,5 @@ dist/
 # OS-specific files
 .DS_Store
 Thumbs.db
+pylint.log
+coverage.xml
