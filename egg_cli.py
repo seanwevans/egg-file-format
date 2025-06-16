@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from egg.composer import compose
 
 from egg import compose
 
@@ -17,6 +18,7 @@ def hatch(_args: argparse.Namespace) -> None:
     print("[hatch] Hatching egg... (placeholder)")
 
 
+
 def main() -> None:
     """Entry point for the ``egg`` command line interface."""
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
@@ -30,19 +32,14 @@ def main() -> None:
     )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
-    parser_build.add_argument(
-        "--manifest",
-        required=True,
-        help="Path to manifest.yaml describing notebook contents",
-    )
-    parser_build.add_argument(
-        "--output",
-        required=True,
-        help="Destination .egg archive path",
-    )
+    parser_build.add_argument("-m", "--manifest", default="manifest.yaml", help="Path to manifest YAML file")
+    parser_build.add_argument("-o", "--output", default="out.egg", help="Path for output egg file")
+    parser_build.add_argument("-f", "--force", action="store_true", help="Overwrite output if it exists")
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
+    parser_hatch.add_argument("-e", "--egg", default="out.egg", help="Egg file to hatch")
+    parser_hatch.add_argument("--no-sandbox", action="store_true", help="Run without sandbox (unsafe)")
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()

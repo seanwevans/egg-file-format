@@ -9,7 +9,7 @@ import zipfile
 import egg_cli  # noqa: E402
 
 
-def test_build(monkeypatch, tmp_path):
+def test_build(monkeypatch, tmp_path, capsys):
     output = tmp_path / "demo.egg"
     monkeypatch.setattr(
         sys,
