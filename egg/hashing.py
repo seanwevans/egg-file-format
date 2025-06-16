@@ -6,6 +6,8 @@ import hashlib
 from pathlib import Path
 from typing import Dict, Iterable
 
+import zipfile
+
 import yaml
 
 
@@ -61,4 +63,36 @@ def verify_hashes(directory: Path, hashes: Dict[str, str]) -> bool:
         calc = sha256_file(directory / name)
         if calc != expected:
             return False
+    return True
+
+
+def verify_archive(archive: Path) -> bool:
+    """Verify that files inside a ZIP ``archive`` match ``hashes.yaml``.
+
+    Parameters
+    ----------
+    archive : Path
+        Path to the ``.egg`` archive to verify.
+
+    Returns
+    -------
+    bool
+        ``True`` if all files match their recorded digests, ``False`` otherwise.
+    """
+    with zipfile.ZipFile(archive) as zf:
+        try:
+            with zf.open("hashes.yaml") as f:
+                hashes = yaml.safe_load(f) or {}
+        except KeyError:
+            return False
+
+        for name, expected in hashes.items():
+            try:
+                with zf.open(name) as fh:
+                    data = fh.read()
+            except KeyError:
+                return False
+            if hashlib.sha256(data).hexdigest() != expected:
+                return False
+
     return True

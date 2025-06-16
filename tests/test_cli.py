@@ -137,3 +137,65 @@ def test_deterministic_build(monkeypatch, tmp_path):
     egg_cli.main()
 
     assert out1.read_bytes() == out2.read_bytes()
+
+
+def test_verify_subcommand(monkeypatch, tmp_path, caplog):
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "verify", "--egg", str(output)],
+    )
+    egg_cli.main()
+    assert f"[verify] {output} verified successfully" in caplog.text
+
+
+def test_verify_failure(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    # Corrupt the archive
+    with zipfile.ZipFile(output, "r") as zf:
+        contents = {name: zf.read(name) for name in zf.namelist()}
+    contents["hello.py"] = b"print('tampered')\n"
+    with zipfile.ZipFile(output, "w") as zf:
+        for name, data in contents.items():
+            info = zipfile.ZipInfo(name)
+            info.date_time = (1980, 1, 1, 0, 0, 0)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zf.writestr(info, data)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "verify", "--egg", str(output)],
+    )
+    with pytest.raises(SystemExit):
+        egg_cli.main()

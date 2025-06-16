@@ -5,6 +5,7 @@ from .hashing import (
     compute_hashes,
     load_hashes,
     sha256_file,
+    verify_archive,
     verify_hashes,
     write_hashes_file,
 )
@@ -16,4 +17,5 @@ __all__ = [
     "write_hashes_file",
     "load_hashes",
     "verify_hashes",
+    "verify_archive",
 ]
