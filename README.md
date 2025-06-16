@@ -41,6 +41,7 @@ You can start experimenting with a minimal two-language notebook using
 - See [FORMAT.md](FORMAT.md) for the egg file format specification.
 - See [SECURITY.md](SECURITY.md) for sandboxing and threat model.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to join the hatch!
+- See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community guidelines.
 
 ## Installation
 
