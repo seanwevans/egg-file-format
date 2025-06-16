@@ -1,15 +1,8 @@
 import argparse
 
 from pathlib import Path
+__version__ = "0.1.0"
 
-
-def build(args: argparse.Namespace) -> None:
-    """Build an egg file from sources.
-
-    Args:
-        args: Parsed command line arguments for the ``build`` subcommand.
-            ``args.manifest`` points to the manifest YAML file and
-            ``args.output`` specifies the resulting egg path.
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
