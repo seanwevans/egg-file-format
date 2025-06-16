@@ -16,26 +16,14 @@ from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
 from egg.precompute import precompute_cells
+from egg.utils import get_lang_command
 
 
 __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
 
-# Mapping of supported languages to their command prefixes.
-DEFAULT_LANG_COMMANDS = {
-    "python": [sys.executable],
-    "r": ["Rscript"],
-    "bash": ["bash"],
-}
 
-
-def get_lang_command(lang: str) -> list[str] | None:
-    """Return the command list for ``lang``, honoring environment overrides."""
-    override = os.getenv(f"EGG_CMD_{lang.upper()}")
-    if override:
-        return [override]
-    return DEFAULT_LANG_COMMANDS.get(lang)
 
 
 def build(args: argparse.Namespace) -> None:

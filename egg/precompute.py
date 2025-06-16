@@ -10,21 +10,7 @@ from pathlib import Path
 from typing import List
 
 from .manifest import load_manifest
-
-# Default language command mapping used when no override is provided.
-DEFAULT_LANG_COMMANDS = {
-    "python": [sys.executable],
-    "r": ["Rscript"],
-    "bash": ["bash"],
-}
-
-
-def get_lang_command(lang: str) -> list[str] | None:
-    """Return the command list for ``lang`` respecting environment overrides."""
-    override = os.getenv(f"EGG_CMD_{lang.upper()}")
-    if override:
-        return [override]
-    return DEFAULT_LANG_COMMANDS.get(lang)
+from .utils import get_lang_command
 
 
 def precompute_cells(manifest_path: Path | str) -> List[Path]:
