@@ -36,7 +36,7 @@ def build(args: argparse.Namespace) -> None:
     if not verify_archive(output):
         raise SystemExit("Hash verification failed")
 
-    logger.info("[build] Building egg from %s -> %s (placeholder)", manifest, output)
+    logger.info("[build] Building egg from %s -> %s", manifest, output)
 
 
 def hatch(args: argparse.Namespace) -> None:

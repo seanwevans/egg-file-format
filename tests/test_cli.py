@@ -33,7 +33,7 @@ def test_build(monkeypatch, tmp_path, caplog):
 
     expected = (
         f"[build] Building egg from {os.path.join('examples', 'manifest.yaml')} "
-        f"-> {output} (placeholder)"
+        f"-> {output}"
     )
     assert expected in caplog.text
 
