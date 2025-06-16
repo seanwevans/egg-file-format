@@ -48,6 +48,8 @@ Follow these steps to build and hatch the demo archive:
    ```bash
    egg build --manifest examples/manifest.yaml --output demo.egg
    ```
+   The `examples` directory also includes `julia_manifest.yaml` showcasing a
+   simple Julia notebook.
 
 3. Hatch the resulting file:
 
