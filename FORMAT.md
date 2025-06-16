@@ -71,6 +71,13 @@ the `.egg` file and referenced by the manifest. Runtime blocks and other
 assets appear in later layers but remain associated with their cells via
 these manifest entries.
 
+### Runtime Blocks Directory
+
+Local dependency files resolved by the runtime block fetcher are included
+in the archive under the `runtime/` directory using their original file
+names. Container-style entries like `python:3.11` are recorded in the
+manifest but are not bundled into the egg.
+
 ### Breadth-First Loading
 
 - UI loads Layer 1 & 2 instantly (title, author, structure, text, previews).
