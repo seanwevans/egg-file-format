@@ -53,12 +53,13 @@ pip install .
 ## Usage
 
 After installation the `egg` command becomes available. The CLI currently
-provides three subcommands:
+provides four subcommands:
 
 ```bash
 egg build --manifest <file> --output <egg> [--force]
 egg hatch --egg <egg> [--no-sandbox]
 egg verify --egg <egg>
+egg info --egg <egg>
 ```
 
 Use `egg <command> -h` to see all options.
@@ -84,6 +85,12 @@ Below is a minimal walkthrough using the placeholder implementation:
 
    ```bash
    egg verify --egg demo.egg
+   ```
+
+5. Inspect the archive metadata:
+
+   ```bash
+   egg info --egg demo.egg
    ```
 
 The builder reads `manifest.yaml`, copies the referenced source files and writes

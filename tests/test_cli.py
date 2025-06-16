@@ -591,3 +591,36 @@ cells:
         names = set(zf.namelist())
     assert "a/hello.py" in names
     assert "b/hello.py" in names
+
+
+def test_info_subcommand(monkeypatch, tmp_path, capsys):
+    """The info command should print manifest details."""
+    egg_path = tmp_path / "demo.egg"
+
+    # build an egg
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+    capsys.readouterr()  # clear build output
+
+    # run info
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "info", "--egg", str(egg_path)],
+    )
+    egg_cli.main()
+    out = capsys.readouterr().out
+    assert "Demo Notebook" in out
+    assert "hello.py" in out
+    assert "hello.R" in out

@@ -84,6 +84,26 @@ def verify(args: argparse.Namespace) -> None:
         raise SystemExit("Hash verification failed")
 
 
+def info(args: argparse.Namespace) -> None:
+    """Print a summary of an egg archive's manifest."""
+    egg_path = Path(args.egg)
+    if not egg_path.is_file():
+        raise SystemExit(f"Egg file not found: {egg_path}")
+
+    with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
+        try:
+            zf.extract("manifest.yaml", tmpdir)
+        except KeyError:
+            raise SystemExit("manifest.yaml not found in archive")
+        manifest = load_manifest(Path(tmpdir) / "manifest.yaml")
+
+    print(f"Name: {manifest.name}")
+    print(f"Description: {manifest.description}")
+    print("Cells:")
+    for cell in manifest.cells:
+        print(f"  - {cell.language}: {cell.source}")
+
+
 def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``egg`` command line interface."""
     if argv is None:  # pragma: no cover - convenience for __main__
@@ -149,6 +169,15 @@ def main(argv: list[str] | None = None) -> None:
         help="Egg file to verify",
     )
     parser_verify.set_defaults(func=verify)
+
+    parser_info = subparsers.add_parser("info", help="Show manifest summary")
+    parser_info.add_argument(
+        "-e",
+        "--egg",
+        default="out.egg",
+        help="Egg file to inspect",
+    )
+    parser_info.set_defaults(func=info)
 
     args, remaining = parser.parse_known_args(argv)
     if remaining:
