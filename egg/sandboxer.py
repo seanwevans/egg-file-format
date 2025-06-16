@@ -12,7 +12,9 @@ from .manifest import Manifest
 logger = logging.getLogger(__name__)
 
 
-def prepare_images(manifest: Manifest, base_dir: Path | str | None = None) -> Dict[str, Path]:
+def prepare_images(
+    manifest: Manifest, base_dir: Path | str | None = None
+) -> Dict[str, Path]:
     """Prepare container images for each runtime referenced in ``manifest``.
 
     Parameters
