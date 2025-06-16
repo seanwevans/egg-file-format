@@ -95,4 +95,10 @@ def verify_archive(archive: Path) -> bool:
             if hashlib.sha256(data).hexdigest() != expected:
                 return False
 
+        # Ensure no unverified files are present in the archive
+        names = set(zf.namelist())
+        names.discard("hashes.yaml")
+        if names != set(hashes.keys()):
+            return False
+
     return True
