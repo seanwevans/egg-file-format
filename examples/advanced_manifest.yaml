@@ -7,7 +7,7 @@ dependencies:
   - bash:5
 permissions:
   network: true
-  filesystem: read-write
+  filesystem: true
 cells:
   - language: python
     source: advanced.py
