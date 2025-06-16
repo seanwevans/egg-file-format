@@ -15,6 +15,7 @@ from egg.hashing import verify_archive
 from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
+from egg.precompute import precompute_cells
 
 
 __version__ = "0.1.0"
@@ -47,6 +48,9 @@ def build(args: argparse.Namespace) -> None:
 
     # Fetch any runtime dependencies referenced in the manifest
     fetch_runtime_blocks(manifest)
+
+    if args.precompute:
+        precompute_cells(manifest)
 
     compose(manifest, output)
 
@@ -166,6 +170,11 @@ def main(argv: list[str] | None = None) -> None:
         "--force",
         action="store_true",
         help="Overwrite output if it exists",
+    )
+    parser_build.add_argument(
+        "--precompute",
+        action="store_true",
+        help="Execute cells and store outputs before composing",
     )
     parser_build.set_defaults(func=build)
 

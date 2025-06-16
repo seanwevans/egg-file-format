@@ -11,6 +11,7 @@ from .hashing import (
     write_hashes_file,
 )
 from .sandboxer import prepare_images
+from .precompute import precompute_cells
 
 __all__ = [
     "compose",
@@ -22,4 +23,5 @@ __all__ = [
     "verify_hashes",
     "verify_archive",
     "prepare_images",
+    "precompute_cells",
 ]
