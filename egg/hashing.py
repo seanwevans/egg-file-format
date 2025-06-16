@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
 from pathlib import Path
 from typing import Dict, Iterable
 
@@ -20,7 +21,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 _CHUNK_SIZE = 8192
 
 # Simplified signing key for demonstration/testing purposes
-SIGNING_KEY = b"egg-signing-key"
+SIGNING_KEY = os.getenv("EGG_SIGNING_KEY", "egg-signing-key").encode()
 
 
 def sha256_file(path: Path) -> str:
@@ -82,8 +83,10 @@ def load_hashes(path: Path) -> Dict[str, str]:
         return yaml.safe_load(f) or {}
 
 
-def sign_hashes(path: Path, *, key: bytes = SIGNING_KEY) -> str:
+def sign_hashes(path: Path, *, key: bytes | None = None) -> str:
     """Return an HMAC-SHA256 signature of ``path``."""
+    if key is None:
+        key = SIGNING_KEY
     data = path.read_bytes()
     return hmac.new(key, data, hashlib.sha256).hexdigest()
 
@@ -97,7 +100,7 @@ def verify_hashes(directory: Path, hashes: Dict[str, str]) -> bool:
     return True
 
 
-def verify_archive(archive: Path) -> bool:
+def verify_archive(archive: Path, *, key: bytes | None = None) -> bool:
     """Verify that files inside a ZIP ``archive`` match ``hashes.yaml``.
 
     Parameters
@@ -110,6 +113,8 @@ def verify_archive(archive: Path) -> bool:
     bool
         ``True`` if all files match their recorded digests, ``False`` otherwise.
     """
+    if key is None:
+        key = SIGNING_KEY
     with zipfile.ZipFile(archive) as zf:
         try:
             with zf.open("hashes.yaml") as f:
@@ -119,7 +124,7 @@ def verify_archive(archive: Path) -> bool:
         except KeyError:
             return False
 
-        expected_sig = hmac.new(SIGNING_KEY, hashes_bytes, hashlib.sha256).hexdigest()
+        expected_sig = hmac.new(key, hashes_bytes, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(signature, expected_sig):
             return False
 

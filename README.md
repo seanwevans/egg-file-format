@@ -75,6 +75,16 @@ override the defaults.
 EGG_CMD_PYTHON=/opt/python3/bin/python egg hatch --egg demo.egg
 ```
 
+### Signing Key
+
+The HMAC signature for `hashes.yaml` defaults to a built-in key. Set
+`EGG_SIGNING_KEY` to override this value when building and verifying egg
+files.
+
+```bash
+EGG_SIGNING_KEY=mysecret egg build --manifest examples/manifest.yaml --output demo.egg
+```
+
 ### Example Build Walkthrough
 
 Below is a minimal walkthrough using the placeholder implementation:
