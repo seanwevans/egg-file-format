@@ -10,7 +10,7 @@ import egg_cli  # noqa: E402
 import pytest
 
 
-def test_build(monkeypatch, tmp_path):
+def test_build(monkeypatch, tmp_path, capsys):
     output = tmp_path / "demo.egg"
     monkeypatch.setattr(
         sys,
@@ -28,7 +28,7 @@ def test_build(monkeypatch, tmp_path):
 
     captured = capsys.readouterr()
     assert (
-        "[build] Building egg from manifest.yaml -> out.egg (placeholder)"
+        "[build] Created"
         in captured.out
     )
 
