@@ -48,6 +48,7 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
     assert "manifest.yaml" in names
     assert "advanced_manifest.yaml" not in names
 
+
 def test_build_julia_manifest(monkeypatch, tmp_path, caplog):
     output = tmp_path / "julia.egg"
     caplog.set_level(logging.INFO)
