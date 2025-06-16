@@ -95,3 +95,28 @@ def test_verify_archive_bad_signature(tmp_path: Path) -> None:
         zf.writestr("hashes.sig", "0" * 64)
 
     assert not verify_archive(output)
+
+
+def test_hashing_import_guard(monkeypatch):
+    """Missing PyYAML should raise a helpful error when importing hashing."""
+    import builtins
+    import importlib
+    import sys
+
+    import egg.hashing as hashing
+
+    monkeypatch.delitem(sys.modules, "yaml", raising=False)
+
+    orig_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "yaml":
+            raise ModuleNotFoundError
+        return orig_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    with pytest.raises(ModuleNotFoundError) as exc:
+        importlib.reload(hashing)
+    assert str(exc.value) == (
+        "PyYAML is required for egg hashing. Install with 'pip install PyYAML'"
+    )
