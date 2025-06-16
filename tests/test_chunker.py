@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-from egg.chunker import chunk
+from egg.chunker import chunk  # noqa: E402
 
 
 def test_chunk_deterministic(tmp_path: Path) -> None:
