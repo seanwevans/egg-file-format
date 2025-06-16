@@ -47,6 +47,12 @@ def load_manifest(path: Path | str) -> Manifest:
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
 
+    # Validate simple scalar fields
+    if not isinstance(data["name"], str):
+        raise ValueError("'name' must be a string")
+    if not isinstance(data["description"], str):
+        raise ValueError("'description' must be a string")
+
     cells_data = data["cells"]
     if not isinstance(cells_data, list):
         raise ValueError("'cells' must be a list")
@@ -57,6 +63,10 @@ def load_manifest(path: Path | str) -> Manifest:
             raise ValueError(f"Cell #{i} must be a mapping")
         if "language" not in cell or "source" not in cell:
             raise ValueError("Each cell requires 'language' and 'source'")
+        if not isinstance(cell["language"], str):
+            raise ValueError(f"Cell #{i} 'language' must be a string")
+        if not isinstance(cell["source"], str):
+            raise ValueError(f"Cell #{i} 'source' must be a string")
         cells.append(Cell(language=cell["language"], source=cell["source"]))
 
     return Manifest(name=data["name"], description=data["description"], cells=cells)
