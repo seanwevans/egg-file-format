@@ -41,8 +41,12 @@ def compute_hashes(files: Iterable[Path]) -> Dict[str, str]:
 
 def write_hashes_file(hashes: Dict[str, str], path: Path) -> None:
     """Write a mapping of file hashes to ``path`` as YAML."""
+    # ``yaml.safe_dump`` does not guarantee deterministic key order unless
+    # ``sort_keys`` is explicitly set.  Relying on the default can result in
+    # nondeterministic builds across PyYAML versions.  Explicitly enable key
+    # sorting so the output is stable regardless of environment.
     with open(path, "w", encoding="utf-8") as f:
-        yaml.safe_dump(hashes, f)
+        yaml.safe_dump(hashes, f, sort_keys=True)
 
 
 def load_hashes(path: Path) -> Dict[str, str]:
