@@ -267,3 +267,66 @@ cells:
     )
     manifest = load_manifest(path)
     assert manifest.dependencies == ["python:3.11", "r:4.3"]
+
+
+def test_manifest_optional_fields(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+author: Alice
+created: "2025-06-16T12:00:00Z"
+license: MIT
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    (tmp_path / "hello.py").write_text("print('hi')\n")
+    manifest = load_manifest(path)
+    assert manifest.author == "Alice"
+    assert manifest.created == "2025-06-16T12:00:00Z"
+    assert manifest.license == "MIT"
+
+
+def test_author_must_be_string(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+author: [bob]
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="'author' must be a string"):
+        load_manifest(path)
+
+
+def test_created_must_be_string(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+created: {year: 2025}
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="'created' must be a string"):
+        load_manifest(path)
+
+
+def test_license_must_be_string(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+license: [MIT]
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="'license' must be a string"):
+        load_manifest(path)

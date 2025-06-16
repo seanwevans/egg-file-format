@@ -33,6 +33,9 @@ class Manifest:
     cells: List[Cell]
     permissions: dict[str, bool] | None = None
     dependencies: List[str] | None = None
+    author: str | None = None
+    created: str | None = None
+    license: str | None = None
 
 
 def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
@@ -66,7 +69,7 @@ def load_manifest(path: Path | str) -> Manifest:
         raise ValueError("Manifest root must be a mapping")
 
     required_fields = {"name", "description", "cells"}
-    optional_fields = {"permissions", "dependencies"}
+    optional_fields = {"permissions", "dependencies", "author", "created", "license"}
     for field in required_fields:
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
@@ -112,6 +115,18 @@ def load_manifest(path: Path | str) -> Manifest:
                 raise ValueError("dependency entries must be strings")
             dependencies.append(dep)
 
+    author_data = data.get("author")
+    if author_data is not None and not isinstance(author_data, str):
+        raise ValueError("'author' must be a string")
+
+    created_data = data.get("created")
+    if created_data is not None and not isinstance(created_data, str):
+        raise ValueError("'created' must be a string")
+
+    license_data = data.get("license")
+    if license_data is not None and not isinstance(license_data, str):
+        raise ValueError("'license' must be a string")
+
     manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
     for i, cell in enumerate(cells_data):
@@ -132,4 +147,7 @@ def load_manifest(path: Path | str) -> Manifest:
         cells=cells,
         permissions=permissions,
         dependencies=dependencies,
+        author=author_data,
+        created=created_data,
+        license=license_data,
     )
