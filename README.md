@@ -16,6 +16,10 @@ Inspired by the metaphor of the egg—slow to build, instant to hatch—egg file
 - **Scalable:** Designed for the future—handles GBs to TBs of data and code with instant load.
 - **Audit & provenance:** Build logs and full environment info are baked into every file.
 
+*The repository currently implements a minimal prototype with a composer and
+hash verification utilities.  The broader features listed above are planned for
+future releases.*
+
 ---
 
 ## Why "egg"?
@@ -48,12 +52,13 @@ pip install .
 
 ## Usage
 
-After installation the `egg` command becomes available. The CLI has two
-subcommands with a few options:
+After installation the `egg` command becomes available. The CLI currently
+provides three subcommands:
 
 ```bash
 egg build --manifest <file> --output <egg> [--force]
 egg hatch --egg <egg> [--no-sandbox]
+egg verify --egg <egg>
 ```
 
 Use `egg <command> -h` to see all options.
@@ -75,8 +80,15 @@ Below is a minimal walkthrough using the placeholder implementation:
    egg hatch --egg demo.egg
    ```
 
-The builder reads `manifest.yaml`, gathers runtimes and assets, and emits the
-`demo.egg` file. For details about the resulting layout, see
+4. Optionally verify the archive:
+
+   ```bash
+   egg verify --egg demo.egg
+   ```
+
+The builder reads `manifest.yaml`, copies the referenced source files and writes
+their hashes to `hashes.yaml`. The resulting archive is written to
+`demo.egg`. For details about the resulting layout, see
 [FORMAT.md#example-layout](FORMAT.md#example-layout). Progress on the builder
 pipeline is tracked in the
 [v0.5 – Builder Pipeline](ROADMAP.md#v05--builder-pipeline) section of the
