@@ -65,6 +65,7 @@ Optional coverage can be gathered with `pytest --cov=egg --cov=egg_cli`.
 - [SECURITY.md](SECURITY.md) – sandboxing and threat model
 - [ROADMAP.md](ROADMAP.md) – planned features
 - [CONTRIBUTING.md](CONTRIBUTING.md) – how to contribute
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) – community expectations
 
 ## Citation
 
