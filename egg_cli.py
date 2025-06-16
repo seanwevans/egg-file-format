@@ -24,8 +24,6 @@ __version__ = "0.1.0"
 logger = logging.getLogger(__name__)
 
 
-
-
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources."""
     manifest = Path(args.manifest)

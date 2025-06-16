@@ -10,7 +10,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from egg.manifest import Cell, Manifest, load_manifest  # noqa: E402
 
 EXAMPLE_MANIFEST = Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml"
-EXAMPLE_ADV_MANIFEST = Path(__file__).resolve().parent.parent / "examples" / "advanced_manifest.yaml"
+EXAMPLE_ADV_MANIFEST = (
+    Path(__file__).resolve().parent.parent / "examples" / "advanced_manifest.yaml"
+)
 
 
 def test_load_manifest_example():
