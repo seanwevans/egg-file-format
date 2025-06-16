@@ -263,3 +263,46 @@ def test_verify_failure(monkeypatch, tmp_path):
     )
     with pytest.raises(SystemExit):
         egg_cli.main()
+
+
+def test_preserve_relative_paths(monkeypatch, tmp_path):
+    """Files in subdirectories should retain their paths inside the archive."""
+    a = tmp_path / "a" / "hello.py"
+    b = tmp_path / "b" / "hello.py"
+    a.parent.mkdir()
+    b.parent.mkdir()
+    a.write_text("print('a')\n")
+    b.write_text("print('b')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: a/hello.py
+  - language: python
+    source: b/hello.py
+"""
+    )
+
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    with zipfile.ZipFile(output) as zf:
+        names = set(zf.namelist())
+    assert "a/hello.py" in names
+    assert "b/hello.py" in names
