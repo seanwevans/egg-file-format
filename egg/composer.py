@@ -96,10 +96,15 @@ def compose(
 
         # copy runtime dependencies under runtime/
         runtime_dir = tmpdir_path / "runtime"
+        seen_runtime: set[str] = set()
         if dependencies:
             for dep in dependencies:
                 if isinstance(dep, Path):
-                    dest = runtime_dir / dep.name
+                    dest_name = dep.name
+                    if dest_name in seen_runtime:
+                        raise ValueError(f"Duplicate dependency filename: {dest_name}")
+                    seen_runtime.add(dest_name)
+                    dest = runtime_dir / dest_name
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(dep, dest)
                     copied.append(dest)
