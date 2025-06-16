@@ -1,0 +1,13 @@
+# Ignore Python artifacts
+__pycache__/
+*.pyc
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+*.egg
+
+# OS-specific files
+.DS_Store
+Thumbs.db
