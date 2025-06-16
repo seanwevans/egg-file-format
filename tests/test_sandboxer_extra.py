@@ -3,12 +3,12 @@ import sys
 from pathlib import Path
 import subprocess
 import tempfile
-import pytest
+import pytest  # noqa: F401
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from egg.sandboxer import build_microvm_image, launch_microvm, prepare_images
-from egg.manifest import Manifest, Cell
+from egg.sandboxer import build_microvm_image, launch_microvm, prepare_images  # noqa: E402
+from egg.manifest import Manifest, Cell  # noqa: E402
 
 
 def test_build_microvm_image(tmp_path: Path) -> None:
