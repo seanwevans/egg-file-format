@@ -31,6 +31,20 @@ The `.egg` file is a hierarchical, chunked container optimized for instant, brea
 For a concrete starting template, see the sample manifest in
 [`examples/manifest.yaml`](examples/manifest.yaml).
 
+### Header Details
+
+The header occupies the first 64 bytes of the file and contains information
+required to locate the rest of the structures.  All integers are encoded as
+little‑endian unsigned values.
+
+- Bytes 0–3: ASCII magic ``"EGGF"`` identifying the file.
+- Bytes 4–5: Major and minor version numbers.
+- Bytes 6–7: Reserved for future use (must be zero).
+- Bytes 8–15: Offset to the manifest table.
+- Bytes 16–23: Offset to the notebook content block.
+- Bytes 24–31: Offset to the first runtime/asset block.
+- Bytes 32–63: Reserved for future metadata.
+
 ### Manifest Fields
 
 The builder consumes a YAML manifest. The minimal fields are:
@@ -42,6 +56,10 @@ The builder consumes a YAML manifest. The minimal fields are:
 | `cells`     | Ordered list of notebook cells. Each entry provides   | Each cell becomes a notebook block in  |
 |             | `language` and `source` path to the code.             | the Notebook section pointing to the   |
 |             |                                                      | assembled code/data blobs.             |
+| `author`    | Optional author or creator name.                      | Stored in the manifest.                |
+| `created`   | Timestamp when the egg was built.                     | Stored in the manifest header.         |
+| `license`   | SPDX license identifier for the notebook content.     | Stored in the manifest.                |
+| `dependencies` | List of runtime block identifiers.                 | Guides the runtime block fetcher.      |
 
 During the build step the sources listed under `cells` are copied into
 the `.egg` file and referenced by the manifest. Runtime blocks and other
@@ -52,6 +70,14 @@ these manifest entries.
 
 - UI loads Layer 1 & 2 instantly (title, author, structure, text, previews).
 - Layers 3+ are loaded on demand, in background, or as user navigates deeper.
+
+### Hash Records
+
+Every archive includes a ``hashes.yaml`` file listing the SHA256 digest of each
+member as ``path: digest`` pairs.  The file itself is authenticated by
+``hashes.sig`` which contains an HMAC-SHA256 signature.  Verifiers must check
+both the signature and that the set of files in the archive exactly matches the
+keys recorded in ``hashes.yaml``.
 
 ---
 
