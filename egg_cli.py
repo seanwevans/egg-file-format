@@ -1,10 +1,14 @@
 import argparse
 import logging
+import subprocess
+import tempfile
+import zipfile
 import sys
 from pathlib import Path
 
 from egg.composer import compose
 from egg.hashing import verify_archive
+from egg.manifest import load_manifest
 
 __version__ = "0.1.0"
 
@@ -24,9 +28,31 @@ def build(args: argparse.Namespace) -> None:
     logger.info("[build] Building egg from %s -> %s (placeholder)", manifest, output)
 
 
-def hatch(_args: argparse.Namespace) -> None:
-    """Hatch (run) an egg file."""
-    logger.info("[hatch] Hatching egg... (placeholder)")
+def hatch(args: argparse.Namespace) -> None:
+    """Hatch (run) an egg file by executing each cell."""
+    egg_path = Path(args.egg)
+    if not egg_path.is_file():
+        raise SystemExit(f"Egg file not found: {egg_path}")
+    if not verify_archive(egg_path):
+        raise SystemExit("Hash verification failed")
+
+    with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
+        zf.extractall(tmpdir)
+        manifest_path = Path(tmpdir) / "manifest.yaml"
+        manifest = load_manifest(manifest_path)
+
+        for cell in manifest.cells:
+            src = Path(tmpdir) / cell.source
+            lang = cell.language.lower()
+            if lang == "python":
+                cmd = [sys.executable, str(src)]
+            elif lang == "r":
+                cmd = ["Rscript", str(src)]
+            else:
+                raise SystemExit(f"Unsupported language: {cell.language}")
+            subprocess.run(cmd, check=True)
+
+    logger.info("[hatch] Completed running %s", egg_path)
 
 
 def verify(args: argparse.Namespace) -> None:
