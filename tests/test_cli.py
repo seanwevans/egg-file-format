@@ -266,6 +266,7 @@ def test_hashes_in_archive(monkeypatch, tmp_path):
     with zipfile.ZipFile(output) as zf:
         names = zf.namelist()
         assert "hashes.yaml" in names
+        assert "hashes.sig" in names
         with zf.open("hashes.yaml") as f:
             hashes = yaml.safe_load(f)
         for name, digest in hashes.items():
@@ -352,6 +353,30 @@ def test_verify_failure(monkeypatch, tmp_path):
         "argv",
         ["egg_cli.py", "verify", "--egg", str(output)],
     )
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
+def test_verify_bad_signature(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    with zipfile.ZipFile(output, "a") as zf:
+        zf.writestr("hashes.sig", "0" * 64)
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "verify", "--egg", str(output)])
     with pytest.raises(SystemExit):
         egg_cli.main()
 

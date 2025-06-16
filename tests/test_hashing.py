@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 from pathlib import Path
 import zipfile
 
@@ -11,6 +12,8 @@ from egg.hashing import (
     load_hashes,
     verify_hashes,
     verify_archive,
+    sign_hashes,
+    SIGNING_KEY,
 )
 from egg.composer import compose
 
@@ -69,5 +72,26 @@ def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
         info.date_time = (1980, 1, 1, 0, 0, 0)
         info.compress_type = zipfile.ZIP_DEFLATED
         zf.writestr(info, b"extra")
+
+    assert not verify_archive(output)
+
+
+def test_sign_hashes_and_verify_signature(tmp_path: Path) -> None:
+    data = tmp_path / "hashes.yaml"
+    data.write_text("a: 1\n")
+    sig = sign_hashes(data, key=SIGNING_KEY)
+    expected = hmac.new(SIGNING_KEY, data.read_bytes(), hashlib.sha256).hexdigest()
+    assert sig == expected
+
+
+def test_verify_archive_bad_signature(tmp_path: Path) -> None:
+    output = tmp_path / "demo.egg"
+    compose(
+        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml", output
+    )
+
+    # Tamper signature
+    with zipfile.ZipFile(output, "a") as zf:
+        zf.writestr("hashes.sig", "0" * 64)
 
     assert not verify_archive(output)
