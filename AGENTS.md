@@ -3,27 +3,25 @@
 ## Egg Build & Runtime Agents
 
 Egg is built on a modular, agent-based system. Each agent is responsible for a
-distinct phase in the lifecycle of an egg file.  Only the composer and hashing
-agents are implemented in this prototype.  They live in
-`egg/composer.py` and `egg/hashing.py` and are driven by the CLI.
+distinct phase in the lifecycle of an egg file.  The prototype includes several
+lightweight agents wired into `egg_cli.py`:
+
+- `egg/composer.py` – composer
+- `egg/runtime_fetcher.py` – runtime fetcher
+- `egg/sandboxer.py` – sandboxer
+- `egg/precompute.py` – precompute helper
+- `egg/chunker.py` – chunker
+- `egg/hashing.py` – hashing and signing
 
 ### 🛠 Build-Time Agents
 
-- **Composer Agent**
-  - Assembles code, data, outputs, and manifest into initial hierarchy.
-- **Runtime Block Fetcher**
-  - Gathers all specified language/runtime blocks (e.g., Python, APL, Julia, R, custom VMs).
-- **Sandboxer**
-  - Constructs secure micro-VM images for each needed runtime.
-- **Hasher & Signer**
-  - Hashes all blobs, signs the manifest for audit/provenance.
-- **Chunker/Index Agent**
-  - Builds static trunk, offset tables, and "heap of heaps" structure.
-  - Splits archives into fixed-size chunks and records offsets for deterministic indexing.
-- **Precompute Agent**
-  - Optionally runs code to precompute cell outputs for instant preview.
-- **Test Agent**
-  - Dry-runs the built egg to guarantee hatch-ability.
+- **Composer Agent** – assembles sources and manifest. Invoked by `egg build`.
+- **Runtime Fetcher** – collects runtime blocks referenced in the manifest. Automatically run during `egg build`.
+- **Precompute Agent** – executes cells and stores outputs when `egg build --precompute` is used.
+- **Hasher & Signer** – hashes all blobs and signs the manifest as part of `egg build`.
+- **Chunker** – splits files into deterministic chunks; currently a standalone helper not directly called by the CLI.
+- **Sandboxer** – prepares micro‑VM images. Triggered by `egg hatch` unless `--no-sandbox`.
+- **Test Agent** – dry-runs the built egg to guarantee hatch-ability.
 
 ### 🐣 Runtime Agents
 
@@ -41,9 +39,10 @@ agents are implemented in this prototype.  They live in
 - Each agent logs its actions for build reproducibility and provenance.
 
 ### 🧰 CLI Modules
-- **egg_cli.py** – lightweight command wrapper exposing `build`, `hatch` and
-  `verify` commands. The CLI parses the manifest file and invokes the prototype
-  agents described above.
+- **egg_cli.py** – command wrapper exposing `build`, `hatch` and `verify`.
+  `egg build` calls the composer, runtime fetcher, precompute (optional),
+  hasher and chunker helpers. `egg hatch` invokes the sandboxer to prepare
+  micro‑VM images before running cells. Verification uses the hashing module.
 
 ---
 
