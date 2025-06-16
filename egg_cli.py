@@ -32,6 +32,9 @@ def build(args: argparse.Namespace) -> None:
 
     compose(manifest, output)
 
+    if not verify_archive(output):
+        raise SystemExit("Hash verification failed")
+
     logger.info("[build] Building egg from %s -> %s (placeholder)", manifest, output)
 
 
