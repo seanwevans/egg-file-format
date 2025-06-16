@@ -49,3 +49,66 @@ cells:
     )  # source missing in cell
     with pytest.raises(ValueError):
         load_manifest(path)
+
+
+def test_invalid_name_type(tmp_path: Path):
+    path = tmp_path / "bad_name.yaml"
+    path.write_text(
+        """
+name:
+  - not a string
+description: desc
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
+
+
+def test_invalid_description_type(tmp_path: Path):
+    path = tmp_path / "bad_desc.yaml"
+    path.write_text(
+        """
+name: Example
+description:
+  key: value
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
+
+
+def test_invalid_cell_language_type(tmp_path: Path):
+    path = tmp_path / "bad_cell_lang.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: [python]
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
+
+
+def test_invalid_cell_source_type(tmp_path: Path):
+    path = tmp_path / "bad_cell_source.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source:
+      - hello.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
