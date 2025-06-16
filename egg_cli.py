@@ -2,8 +2,14 @@ import argparse
 
 from pathlib import Path
 
-from egg import compose
 
+def build(args: argparse.Namespace) -> None:
+    """Build an egg file from sources.
+
+    Args:
+        args: Parsed command line arguments for the ``build`` subcommand.
+            ``args.manifest`` points to the manifest YAML file and
+            ``args.output`` specifies the resulting egg path.
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
@@ -14,30 +20,19 @@ def build(args: argparse.Namespace) -> None:
         Parsed CLI arguments with ``manifest`` and ``output`` attributes.
     """
 
-    compose(Path(args.manifest), Path(args.output))
-    print(f"[build] Egg written to {args.output}")
+    print(f"[build] Building egg from {args.manifest} -> {args.output} (placeholder)")
 
-    resolved = []
-    if args.manifest:
-        resolved = parse_manifest(args.manifest)
-
-    print("[build] Building egg... (placeholder)")
-    for path in resolved:
-        print(path)
-
-
-
-def hatch(_args: argparse.Namespace) -> None:
+def hatch(args: argparse.Namespace) -> None:
     """Hatch (run) an egg file.
 
     Args:
-        _args: Parsed command line arguments for the ``hatch`` subcommand. This
-            placeholder function ignores additional options.
+        args: Parsed command line arguments for the ``hatch`` subcommand.
+            ``args.egg`` identifies the egg file to hatch.
 
     Returns:
         None. Prints a placeholder message indicating an egg would hatch.
     """
-    print("[hatch] Hatching egg... (placeholder)")
+    print(f"[hatch] Hatching {args.egg} (placeholder)")
 
 
 def main() -> None:
@@ -62,28 +57,38 @@ def main() -> None:
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
     parser_build.add_argument(
+
+        "-m",
         "--manifest",
-
-        required=True,
-        help="Path to manifest.yaml describing notebook contents",
+        default="manifest.yaml",
+        help="Path to manifest YAML file",
     )
     parser_build.add_argument(
+        "-o",
         "--output",
-        required=True,
-        help="Destination .egg archive path",
-
-        type=str,
-        help="Path to the manifest YAML",
+        default="out.egg",
+        help="Path for output egg file",
     )
     parser_build.add_argument(
-        "--output",
-        type=str,
-        help="Output egg file path",
-
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite output if it exists",
     )
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
+    parser_hatch.add_argument(
+        "-e",
+        "--egg",
+        default="out.egg",
+        help="Egg file to hatch",
+    )
+    parser_hatch.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        help="Run without sandbox (unsafe)",
+    )
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
