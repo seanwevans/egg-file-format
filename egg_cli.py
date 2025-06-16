@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> None:
         description="Egg builder and hatcher CLI",
         parents=[global_parser],
     )
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
 
@@ -150,11 +150,7 @@ def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=level, format="%(message)s")
     logging.getLogger().setLevel(level)
 
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        parser.print_help(sys.stderr)
-        parser.exit(2)
+    args.func(args)
 
 
 if __name__ == "__main__":

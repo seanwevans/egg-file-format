@@ -173,12 +173,16 @@ def test_requires_subcommand(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         egg_cli.main()
     assert exc.value.code == 2
+    captured = capsys.readouterr()
+    assert "the following arguments are required: command" in captured.err
 
 
 def test_help_without_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit):
         egg_cli.main()
+    out = capsys.readouterr().err
+    assert out.startswith("usage:")
 
 
 def test_build_missing_source(monkeypatch, tmp_path):
