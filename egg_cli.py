@@ -1,5 +1,7 @@
 import argparse
 
+__version__ = "0.1.0"
+
 
 def build(_args: argparse.Namespace) -> None:
     """Build an egg file from sources.
@@ -37,6 +39,12 @@ def main() -> None:
         None.
     """
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show program version and exit",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
@@ -50,6 +58,7 @@ def main() -> None:
         args.func(args)
     else:
         parser.print_help()
+        parser.exit()
 
 
 if __name__ == "__main__":
