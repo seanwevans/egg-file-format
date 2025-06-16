@@ -51,7 +51,7 @@ pip install .
 After installation the `egg` command becomes available:
 
 ```bash
-egg build  # assemble an egg (placeholder)
+egg build --manifest examples/manifest.yaml --output demo.egg
 egg hatch  # run an egg (placeholder)
 ```
 
@@ -61,7 +61,7 @@ Once the real build pipeline lands, you will be able to assemble the sample
 notebook into an `.egg` file with:
 
 ```bash
-python egg_cli.py build examples/manifest.yaml
+egg build --manifest examples/manifest.yaml --output demo.egg
 ```
 
 This command will read the manifest, gather runtimes and assets, and emit a

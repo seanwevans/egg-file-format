@@ -1,17 +1,19 @@
 import argparse
+from pathlib import Path
+
+from egg import compose
 
 
-def build(_args: argparse.Namespace) -> None:
+def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
 
-    Args:
-        _args: Parsed command line arguments for the ``build`` subcommand. The
-            current placeholder does not expect any specific options.
-
-    Returns:
-        None. Prints a placeholder message to indicate the command ran.
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments with ``manifest`` and ``output`` attributes.
     """
-    print("[build] Building egg... (placeholder)")
+    compose(Path(args.manifest), Path(args.output))
+    print(f"[build] Egg written to {args.output}")
 
 
 def hatch(_args: argparse.Namespace) -> None:
@@ -40,6 +42,16 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command")
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
+    parser_build.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to manifest.yaml describing notebook contents",
+    )
+    parser_build.add_argument(
+        "--output",
+        required=True,
+        help="Destination .egg archive path",
+    )
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
