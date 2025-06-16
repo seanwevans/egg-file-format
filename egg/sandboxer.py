@@ -1,10 +1,20 @@
-"""Minimal sandbox preparation utilities."""
+"""Minimal sandbox preparation utilities.
+
+This module provides helper functions for constructing placeholder micro-VM
+images and launching them via `Firecracker <https://firecracker-microvm.github.io/>`_.
+The actual VM image creation is heavily simplified and merely writes a
+``microvm.json`` configuration file describing the runtime language.  Future
+implementations will build real VM disk images and kernels.  ``launch_microvm``
+is a thin wrapper around the ``firecracker`` binary which expects the
+configuration file produced by :func:`build_microvm_image`.
+"""
 
 from __future__ import annotations
 
 import json
 import logging
 import tempfile
+import subprocess
 from pathlib import Path
 from typing import Dict
 
@@ -14,10 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def build_microvm_image(language: str, dest: Path) -> None:
-    """Create a placeholder micro-VM image for ``language`` in ``dest``.
+    """Create a placeholder Firecracker micro-VM image for ``language``.
 
-    A small ``microvm.conf`` file is written inside ``dest`` identifying the
-    runtime. Future versions will build an actual VM image.
+    A ``microvm.json`` configuration file identifying the runtime is written
+    inside ``dest``.  Future versions will build an actual VM image with a
+    kernel and root filesystem.
 
     Parameters
     ----------
@@ -28,9 +39,15 @@ def build_microvm_image(language: str, dest: Path) -> None:
     """
 
     dest.mkdir(parents=True, exist_ok=True)
-    config = dest / "microvm.conf"
-    config.write_text(f"language: {language}\n", encoding="utf-8")
-    logger.debug("[sandboxer] wrote %s", config)
+    config = {
+        "language": language,
+        "vm_type": "firecracker",
+    }
+    conf_json = dest / "microvm.json"
+    conf_json.write_text(json.dumps(config), encoding="utf-8")
+    conf_yaml = dest / "microvm.conf"
+    conf_yaml.write_text(f"language: {language}\n", encoding="utf-8")
+    logger.debug("[sandboxer] wrote %s and %s", conf_json, conf_yaml)
 
 
 def prepare_images(
@@ -67,3 +84,22 @@ def prepare_images(
         logger.info("[sandboxer] prepared %s image at %s", lang, img_dir)
         images[lang] = img_dir
     return images
+
+
+def launch_microvm(image_dir: Path) -> subprocess.CompletedProcess:
+    """Launch a Firecracker micro-VM using ``image_dir/microvm.json``.
+
+    Parameters
+    ----------
+    image_dir:
+        Directory containing the ``microvm.json`` configuration file.
+
+    Returns
+    -------
+    subprocess.CompletedProcess
+        The result object from :func:`subprocess.run`.
+    """
+    config = image_dir / "microvm.json"
+    cmd = ["firecracker", "--config-file", str(config)]
+    logger.info("[sandboxer] launching Firecracker: %s", " ".join(cmd))
+    return subprocess.run(cmd, check=True)
