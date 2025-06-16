@@ -47,7 +47,7 @@ little‑endian unsigned values.
 
 ### Manifest Fields
 
-The builder consumes a YAML manifest. The minimal fields are:
+The builder consumes a YAML manifest. `name`, `description`, and `cells` are required. All other fields are optional:
 
 | Field       | Purpose                                              | Egg Layout Mapping                     |
 |-------------|------------------------------------------------------|----------------------------------------|
@@ -89,7 +89,9 @@ Every archive includes a ``hashes.yaml`` file listing the SHA256 digest of each
 member as ``path: digest`` pairs.  The file itself is authenticated by
 ``hashes.sig`` which contains an HMAC-SHA256 signature.  Verifiers must check
 both the signature and that the set of files in the archive exactly matches the
-keys recorded in ``hashes.yaml``.
+keys recorded in ``hashes.yaml``.  The signing key defaults to
+``"egg-signing-key"`` but may be overridden via the ``EGG_SIGNING_KEY``
+environment variable during build and verification.
 
 ---
 
