@@ -2,18 +2,18 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-README_PATH = Path('README.md')
-COVERAGE_XML = Path('coverage.xml')
-PYLINT_LOG = Path('pylint.log')
+README_PATH = Path("README.md")
+COVERAGE_XML = Path("coverage.xml")
+PYLINT_LOG = Path("pylint.log")
 
 
 def update_coverage(readme_text: str) -> str:
     if not COVERAGE_XML.exists():
         return readme_text
     root = ET.parse(COVERAGE_XML).getroot()
-    line_rate = float(root.get('line-rate', 0))
+    line_rate = float(root.get("line-rate", 0))
     percent = round(line_rate * 100)
-    pattern = re.compile(r'(https://img.shields.io/badge/coverage-)(\d+)%25-(\w+)')
+    pattern = re.compile(r"(https://img.shields.io/badge/coverage-)(\d+)%25-(\w+)")
 
     def repl(match: re.Match) -> str:
         return f"{match.group(1)}{percent}%25-{match.group(3)}"
@@ -33,8 +33,8 @@ def update_pylint(readme_text: str) -> str:
     if rating is None:
         return readme_text
     rating_str = f"{rating:.2f}/10"
-    rating_url = rating_str.replace('/', '%2F')
-    pattern = re.compile(r'(https://img.shields.io/badge/pylint-)[0-9.]+%2F10-(\w+)')
+    rating_url = rating_str.replace("/", "%2F")
+    pattern = re.compile(r"(https://img.shields.io/badge/pylint-)[0-9.]+%2F10-(\w+)")
     return pattern.sub(lambda m: f"{m.group(1)}{rating_url}-{m.group(2)}", readme_text)
 
 
@@ -45,5 +45,5 @@ def main() -> None:
     README_PATH.write_text(text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
