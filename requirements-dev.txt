@@ -1,5 +1,6 @@
 PyYAML
 pytest
+pytest-cov
 pre-commit
 ruff
 black

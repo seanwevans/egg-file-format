@@ -804,6 +804,35 @@ def test_info_subcommand(monkeypatch, tmp_path, capsys):
     assert "hello.R" in out
 
 
+def test_info_dependencies_permissions(monkeypatch, tmp_path, capsys):
+    """Advanced manifest fields should be listed by info."""
+    egg_path = tmp_path / "adv.egg"
+
+    # build using advanced manifest with deps and permissions
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "advanced_manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+    capsys.readouterr()
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
+    egg_cli.main()
+    out = capsys.readouterr().out
+    assert "Dependencies:" in out
+    assert "python:3.11" in out
+    assert "Permissions:" in out
+    assert "network: True" in out
+
+
 def test_hatch_missing_egg(monkeypatch):
     missing = Path("nope.egg")
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(missing)])

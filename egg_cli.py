@@ -118,6 +118,14 @@ def info(args: argparse.Namespace) -> None:
     print("Cells:")
     for cell in manifest.cells:
         print(f"  - {cell.language}: {cell.source}")
+    if manifest.dependencies:
+        print("Dependencies:")
+        for dep in manifest.dependencies:
+            print(f"  - {dep}")
+    if manifest.permissions:
+        print("Permissions:")
+        for perm, val in manifest.permissions.items():
+            print(f"  {perm}: {val}")
 
 
 def main(argv: list[str] | None = None) -> None:
