@@ -30,6 +30,8 @@ Inspired by the metaphor of the egg—slow to build, instant to hatch—egg file
 ## Getting Started
 
 *Coming soon!* This project is in early stages.
+You can start experimenting with a minimal two-language notebook using
+[`examples/manifest.yaml`](examples/manifest.yaml).
 
 - See [AGENTS.md](AGENTS.md) for the agent and build pipeline design.
 - See [FORMAT.md](FORMAT.md) for the egg file format specification.

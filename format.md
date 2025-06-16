@@ -28,6 +28,9 @@ The `.egg` file is a hierarchical, chunked container optimized for instant, brea
 [Header/TOC][Static Table L1][Static Table L2][Manifest][Notebook][Block A][Block B]...[Heap1][Heap2]...
 ```
 
+For a concrete starting template, see the sample manifest in
+[`examples/manifest.yaml`](examples/manifest.yaml).
+
 ### Breadth-First Loading
 
 - UI loads Layer 1 & 2 instantly (title, author, structure, text, previews).

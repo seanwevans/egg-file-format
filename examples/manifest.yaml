@@ -1,0 +1,7 @@
+name: "Demo Notebook"
+description: "Simple two-language example"
+cells:
+  - language: python
+    source: hello.py
+  - language: r
+    source: hello.R
