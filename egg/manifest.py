@@ -31,6 +31,7 @@ class Manifest:
     name: str
     description: str
     cells: List[Cell]
+    permissions: dict[str, bool] | None = None
 
 
 def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
@@ -64,11 +65,12 @@ def load_manifest(path: Path | str) -> Manifest:
         raise ValueError("Manifest root must be a mapping")
 
     required_fields = {"name", "description", "cells"}
+    optional_fields = {"permissions"}
     for field in required_fields:
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
 
-    unknown_fields = set(data) - required_fields
+    unknown_fields = set(data) - required_fields - optional_fields
     if unknown_fields:
         unknown = ", ".join(sorted(unknown_fields))
         raise ValueError(f"Unknown field(s): {unknown}")
@@ -82,6 +84,19 @@ def load_manifest(path: Path | str) -> Manifest:
     cells_data = data["cells"]
     if not isinstance(cells_data, list):
         raise ValueError("'cells' must be a list")
+
+    permissions_data = data.get("permissions")
+    permissions: dict[str, bool] | None
+    if permissions_data is None:
+        permissions = None
+    else:
+        if not isinstance(permissions_data, dict):
+            raise ValueError("'permissions' must be a mapping")
+        permissions = {}
+        for perm, val in permissions_data.items():
+            if not isinstance(val, bool):
+                raise ValueError(f"Permission '{perm}' must be a boolean")
+            permissions[str(perm)] = val
 
     manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
@@ -97,4 +112,9 @@ def load_manifest(path: Path | str) -> Manifest:
         normalized = _normalize_source(cell["source"], manifest_dir)
         cells.append(Cell(language=cell["language"], source=normalized))
 
-    return Manifest(name=data["name"], description=data["description"], cells=cells)
+    return Manifest(
+        name=data["name"],
+        description=data["description"],
+        cells=cells,
+        permissions=permissions,
+    )

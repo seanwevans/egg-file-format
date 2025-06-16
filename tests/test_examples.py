@@ -16,6 +16,8 @@ EXAMPLE_ADV_MANIFEST = (
 def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
     output = tmp_path / "advanced.egg"
     caplog.set_level(logging.INFO)
+    for dep in ["python:3.11", "r:4.3", "bash:5"]:
+        (EXAMPLE_ADV_MANIFEST.parent / dep).write_text("img")
     monkeypatch.setattr(
         sys,
         "argv",
