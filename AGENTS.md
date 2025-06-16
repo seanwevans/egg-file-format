@@ -68,6 +68,24 @@ pre-commit run --all-files
 These commands format the code, perform static analysis and run the test suite.
 Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details on style guidelines.
 
+### Plug-in Development
+
+Egg's functionality can be extended through Python entry points. Create a
+`register()` function in your module and list it under the appropriate group in
+`pyproject.toml`:
+
+```toml
+[project.entry-points."egg.runtimes"]
+ruby = "mypkg.ruby_plugin:register"
+
+[project.entry-points."egg.agents"]
+hello = "mypkg.hello_agent:register"
+```
+
+Runtime plug-ins should return a mapping of language names to command lists.
+Agent plug-ins run for their side effects and may modify the CLI or agents.
+Both types are discovered by `egg.utils.load_plugins()` when the CLI starts.
+
 ---
 
 See [FORMAT.md](FORMAT.md) for the file structure produced by these agents.
