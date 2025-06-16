@@ -49,3 +49,10 @@ def test_fetch_escaped_path(tmp_path: Path) -> None:
     manifest = base_manifest(tmp_path, "\n  - ../escape.img")
     with pytest.raises(ValueError):
         fetch_runtime_blocks(manifest)
+
+
+def test_manifest_root_not_mapping(tmp_path: Path) -> None:
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text("- just a list\n")
+    with pytest.raises(ValueError, match="Manifest root must be a mapping"):
+        fetch_runtime_blocks(manifest)
