@@ -97,6 +97,40 @@ def test_verify_archive_bad_signature(tmp_path: Path) -> None:
     assert not verify_archive(output)
 
 
+def test_verify_archive_missing_hashes(tmp_path: Path) -> None:
+    foo = tmp_path / "foo.txt"
+    foo.write_text("data")
+    archive = tmp_path / "demo.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zi = zipfile.ZipInfo(foo.name)
+        zi.date_time = (1980, 1, 1, 0, 0, 0)
+        zi.compress_type = zipfile.ZIP_DEFLATED
+        with open(foo, "rb") as f:
+            zf.writestr(zi, f.read())
+    assert not verify_archive(archive)
+
+
+def test_verify_archive_missing_file(tmp_path: Path) -> None:
+    foo = tmp_path / "foo.txt"
+    bar = tmp_path / "bar.txt"
+    foo.write_text("A")
+    bar.write_text("B")
+    hashes = compute_hashes([foo, bar], base_dir=tmp_path)
+    hashes_path = tmp_path / "hashes.yaml"
+    write_hashes_file(hashes, hashes_path)
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(sign_hashes(hashes_path, key=SIGNING_KEY))
+    archive = tmp_path / "demo.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for path in [foo, hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as f:
+                zf.writestr(zi, f.read())
+    assert not verify_archive(archive)
+
+
 def test_hashing_import_guard(monkeypatch):
     """Missing PyYAML should raise a helpful error when importing hashing."""
     import builtins

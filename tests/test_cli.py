@@ -7,6 +7,7 @@ import pytest
 import logging
 import subprocess
 import shutil
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
@@ -664,3 +665,93 @@ def test_info_subcommand(monkeypatch, tmp_path, capsys):
     assert "Demo Notebook" in out
     assert "hello.py" in out
     assert "hello.R" in out
+
+
+def test_hatch_missing_egg(monkeypatch):
+    missing = Path("nope.egg")
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(missing)])
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert str(missing) in str(exc.value)
+
+
+def test_hatch_bad_signature(monkeypatch, tmp_path):
+    egg_path = tmp_path / "demo.egg"
+    # build
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    # tamper signature
+    with zipfile.ZipFile(egg_path, "a") as zf:
+        zf.writestr("hashes.sig", "0" * 64)
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
+def test_verify_missing_egg(monkeypatch):
+    missing = Path("nope.egg")
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "verify", "--egg", str(missing)])
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert str(missing) in str(exc.value)
+
+
+def test_info_missing_egg(monkeypatch):
+    missing = Path("nope.egg")
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(missing)])
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert str(missing) in str(exc.value)
+
+
+def test_info_missing_manifest(monkeypatch, tmp_path):
+    egg_path = tmp_path / "demo.egg"
+    with zipfile.ZipFile(egg_path, "w") as zf:
+        info = zipfile.ZipInfo("foo.txt")
+        info.date_time = (1980, 1, 1, 0, 0, 0)
+        info.compress_type = zipfile.ZIP_DEFLATED
+        zf.writestr(info, b"foo")
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
+def test_verbose_debug(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    root_logger = logging.getLogger()
+    prev = root_logger.level
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+            "-vv",
+        ],
+    )
+    try:
+        egg_cli.main()
+        assert root_logger.level == logging.DEBUG
+    finally:
+        root_logger.setLevel(prev)
+    assert output.is_file()
