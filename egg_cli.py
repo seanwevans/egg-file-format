@@ -13,6 +13,7 @@ from pathlib import Path
 from egg.composer import compose
 from egg.hashing import verify_archive
 from egg.manifest import load_manifest
+from egg.sandboxer import prepare_images
 
 __version__ = "0.1.0"
 
@@ -58,15 +59,15 @@ def hatch(args: argparse.Namespace) -> None:
     if not verify_archive(egg_path):
         raise SystemExit("Hash verification failed")
 
-    if not args.no_sandbox:
-        logger.warning(
-            "[hatch] Sandboxing is not yet implemented; running without isolation"
-        )
-
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
         zf.extractall(tmpdir)
         manifest_path = Path(tmpdir) / "manifest.yaml"
         manifest = load_manifest(manifest_path)
+
+        if args.no_sandbox:
+            logger.warning("[hatch] Running without sandbox (unsafe)")
+        else:
+            prepare_images(manifest, Path(tmpdir) / "sandbox")
 
         for cell in manifest.cells:
             src = Path(tmpdir) / cell.source

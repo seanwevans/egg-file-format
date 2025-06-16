@@ -89,12 +89,17 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     egg_cli.main()
 
     calls: list[list[str]] = []
+    sb_calls: list[list[str]] = []
 
     def fake_run(cmd, check=True):
         calls.append(cmd)
 
+    def fake_prepare(manifest, dest):
+        sb_calls.append(sorted({c.language.lower() for c in manifest.cells}))
+
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
+    monkeypatch.setattr(egg_cli, "prepare_images", fake_prepare)
 
     caplog.set_level(logging.INFO)
     monkeypatch.setattr(
@@ -109,7 +114,45 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     )
     assert any(cmd[0] == "Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
     assert f"[hatch] Completed running {egg_path}" in caplog.text
-    assert "Sandboxing is not yet implemented" in caplog.text
+    assert sb_calls == [["python", "r"]]
+
+
+def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
+    egg_path = tmp_path / "demo.egg"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    called = []
+
+    def fake_prepare(*a, **kw):
+        called.append(True)
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
+    monkeypatch.setattr(egg_cli, "prepare_images", fake_prepare)
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "hatch", "--no-sandbox", "--egg", str(egg_path)],
+    )
+    egg_cli.main()
+
+    assert not called
+    assert "[hatch] Running without sandbox (unsafe)" in caplog.text
 
 
 def test_hatch_bash(monkeypatch, tmp_path, caplog):

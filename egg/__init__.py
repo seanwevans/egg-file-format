@@ -10,6 +10,7 @@ from .hashing import (
     verify_hashes,
     write_hashes_file,
 )
+from .sandboxer import prepare_images
 
 __all__ = [
     "compose",
@@ -20,4 +21,5 @@ __all__ = [
     "load_hashes",
     "verify_hashes",
     "verify_archive",
+    "prepare_images",
 ]

@@ -10,6 +10,8 @@
 - All runtime execution occurs in a micro-VM (e.g., Firecracker), isolated from host OS.
 - No direct access to host filesystem, network, or devices unless explicitly permitted by manifest.
 - Each VM has strict resource quotas (CPU, RAM, disk, time limits).
+- During `egg hatch`, the sandboxer builds a container image for each runtime.
+- Passing `--no-sandbox` disables this isolation and should only be used for testing.
 
 ### Integrity & Authenticity
 - All runtime blocks and assets are hashed and (optionally) signed at build time.
