@@ -9,6 +9,8 @@ authors = [{ name = "egg contributors" }]
 readme = "README.md"
 description = "CLI tools for the egg file format"
 requires-python = ">=3.8"
+license = { text = "MIT" }
+classifiers = ["License :: OSI Approved :: MIT License"]
 
 [project.scripts]
 egg = "egg_cli:main"
