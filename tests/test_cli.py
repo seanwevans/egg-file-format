@@ -869,6 +869,34 @@ def test_info_missing_manifest(monkeypatch, tmp_path):
         egg_cli.main()
 
 
+def test_info_bad_signature(monkeypatch, tmp_path):
+    """'egg info' should fail when the archive is tampered."""
+    egg_path = tmp_path / "demo.egg"
+
+    # build an egg
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    # tamper with signature
+    with zipfile.ZipFile(egg_path, "a") as zf:
+        zf.writestr("hashes.sig", "0" * 64)
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
 def test_verbose_debug(monkeypatch, tmp_path):
     output = tmp_path / "demo.egg"
     root_logger = logging.getLogger()
