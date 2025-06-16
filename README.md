@@ -53,6 +53,7 @@ After installation the `egg` command becomes available:
 ```bash
 egg build  # assemble an egg (placeholder)
 egg hatch  # run an egg (placeholder)
+egg --version  # show CLI version
 ```
 
 ### Example Build Walkthrough
