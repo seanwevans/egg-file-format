@@ -97,6 +97,9 @@ def info(args: argparse.Namespace) -> None:
     if not egg_path.is_file():
         raise SystemExit(f"Egg file not found: {egg_path}")
 
+    if not verify_archive(egg_path):
+        raise SystemExit("Hash verification failed")
+
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
         try:
             zf.extract("manifest.yaml", tmpdir)
