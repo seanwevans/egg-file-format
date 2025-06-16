@@ -1,12 +1,11 @@
 import os
 import sys
-
+import hashlib
+import zipfile
+import yaml
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-import zipfile
-import hashlib
-import yaml
 
 import egg_cli  # noqa: E402
 
@@ -34,7 +33,6 @@ def test_build(monkeypatch, tmp_path, capsys):
     )
     assert expected in captured.out
 
-
     assert output.is_file()
     with zipfile.ZipFile(output) as zf:
         names = zf.namelist()
@@ -46,7 +44,7 @@ def test_hatch(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch"])
     egg_cli.main()
     captured = capsys.readouterr()
-    assert "[hatch] Hatching egg... (placeholder)" in captured.out
+    assert "[hatch] Hatching out.egg (placeholder)" in captured.out
 
 
 def test_requires_subcommand(monkeypatch):
@@ -117,4 +115,3 @@ def test_deterministic_build(monkeypatch, tmp_path):
     egg_cli.main()
 
     assert out1.read_bytes() == out2.read_bytes()
-

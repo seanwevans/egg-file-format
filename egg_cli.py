@@ -12,15 +12,7 @@ def build(args: argparse.Namespace) -> None:
     output = Path(args.output)
 
     if output.exists() and not args.force:
-        raise FileExistsError(f"{output} already exists. Use --force to overwrite.")
-
-    manifest = Path(args.manifest)
-    output = Path(args.output)
-
-    if output.exists() and not args.force:
         raise SystemExit(f"{output} exists. Use --force to overwrite.")
-
-    from egg import compose
 
     compose(manifest, output)
 
@@ -30,15 +22,6 @@ def build(args: argparse.Namespace) -> None:
 def hatch(args: argparse.Namespace) -> None:
     """Hatch (run) an egg file."""
     print(f"[hatch] Hatching {args.egg} (placeholder)")
-    
-    compose(Path(args.manifest), Path(args.output))
-    print("[build] Building egg from manifest.yaml -> out.egg (placeholder)")
-
-
-def hatch(_args: argparse.Namespace) -> None:
-    """Hatch (run) an egg file."""
-    print("[hatch] Hatching egg... (placeholder)")
-
 
 
 def main() -> None:
@@ -76,8 +59,17 @@ def main() -> None:
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
-    parser_hatch.add_argument("-e", "--egg", default="out.egg", help="Egg file to hatch")
-    parser_hatch.add_argument("--no-sandbox", action="store_true", help="Run without sandbox (unsafe)")
+    parser_hatch.add_argument(
+        "-e",
+        "--egg",
+        default="out.egg",
+        help="Egg file to hatch",
+    )
+    parser_hatch.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        help="Run without sandbox (unsafe)",
+    )
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
