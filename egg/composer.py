@@ -69,8 +69,8 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         copied: List[Path] = []
-        # copy manifest
-        manifest_copy = tmpdir_path / manifest_path.name
+        # copy manifest under a fixed name inside the archive
+        manifest_copy = tmpdir_path / "manifest.yaml"
         shutil.copy2(manifest_path, manifest_copy)
         copied.append(manifest_copy)
 
