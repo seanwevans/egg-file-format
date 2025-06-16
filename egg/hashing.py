@@ -23,7 +23,9 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def compute_hashes(files: Iterable[Path], *, base_dir: Path | None = None) -> Dict[str, str]:
+def compute_hashes(
+    files: Iterable[Path], *, base_dir: Path | None = None
+) -> Dict[str, str]:
     """Compute SHA256 hashes for ``files``.
 
     Parameters
