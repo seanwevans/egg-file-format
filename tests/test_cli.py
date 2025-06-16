@@ -5,6 +5,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import zipfile
+import hashlib
+import yaml
 
 import egg_cli  # noqa: E402
 
@@ -68,3 +70,51 @@ def test_version_option(monkeypatch, capsys):
         egg_cli.main()
     captured = capsys.readouterr()
     assert egg_cli.__version__ in captured.out
+
+
+def test_hashes_in_archive(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    with zipfile.ZipFile(output) as zf:
+        names = zf.namelist()
+        assert "hashes.yaml" in names
+        with zf.open("hashes.yaml") as f:
+            hashes = yaml.safe_load(f)
+        for name, digest in hashes.items():
+            with zf.open(name) as fh:
+                data = fh.read()
+            assert hashlib.sha256(data).hexdigest() == digest
+
+
+def test_deterministic_build(monkeypatch, tmp_path):
+    base_args = [
+        "egg_cli.py",
+        "build",
+        "--manifest",
+        os.path.join("examples", "manifest.yaml"),
+    ]
+
+    out1 = tmp_path / "one.egg"
+    out2 = tmp_path / "two.egg"
+
+    monkeypatch.setattr(sys, "argv", base_args + ["--output", str(out1)])
+    egg_cli.main()
+
+    monkeypatch.setattr(sys, "argv", base_args + ["--output", str(out2)])
+    egg_cli.main()
+
+    assert out1.read_bytes() == out2.read_bytes()
+
