@@ -1,4 +1,5 @@
 import argparse
+
 from pathlib import Path
 
 from egg import compose
@@ -12,8 +13,18 @@ def build(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Parsed CLI arguments with ``manifest`` and ``output`` attributes.
     """
+
     compose(Path(args.manifest), Path(args.output))
     print(f"[build] Egg written to {args.output}")
+
+    resolved = []
+    if args.manifest:
+        resolved = parse_manifest(args.manifest)
+
+    print("[build] Building egg... (placeholder)")
+    for path in resolved:
+        print(path)
+
 
 
 def hatch(_args: argparse.Namespace) -> None:
@@ -39,11 +50,20 @@ def main() -> None:
         None.
     """
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
-    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show program version and exit",
+    )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
     parser_build.add_argument(
         "--manifest",
+
         required=True,
         help="Path to manifest.yaml describing notebook contents",
     )
@@ -51,6 +71,15 @@ def main() -> None:
         "--output",
         required=True,
         help="Destination .egg archive path",
+
+        type=str,
+        help="Path to the manifest YAML",
+    )
+    parser_build.add_argument(
+        "--output",
+        type=str,
+        help="Output egg file path",
+
     )
     parser_build.set_defaults(func=build)
 
@@ -58,10 +87,13 @@ def main() -> None:
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
+
     if hasattr(args, "func"):
         args.func(args)
     else:
         parser.print_help()
+        parser.exit()
+
 
 
 if __name__ == "__main__":
