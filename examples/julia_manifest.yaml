@@ -1,0 +1,5 @@
+name: "Julia Notebook"
+description: "Simple Julia hello world"
+cells:
+  - language: julia
+    source: julia_example.jl

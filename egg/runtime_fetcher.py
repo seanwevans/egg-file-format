@@ -64,7 +64,6 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
             resolved.append(dep)
             logger.debug("[runtime_fetcher] Recorded container spec %s", dep)
             continue
-
         p = Path(dep)
         if p.is_absolute():
             raise ValueError(f"Absolute dependency paths are not allowed: {dep}")
