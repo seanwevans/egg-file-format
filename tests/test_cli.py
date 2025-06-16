@@ -74,6 +74,27 @@ def test_version_option(monkeypatch, capsys):
     assert egg_cli.__version__ in captured.out
 
 
+def test_verbose_after_subcommand(monkeypatch, tmp_path, caplog):
+    """Global options like ``--verbose`` should work after subcommands."""
+    output = tmp_path / "demo.egg"
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+            "--verbose",
+        ],
+    )
+    egg_cli.main()
+    assert output.is_file()
+
+
 def test_hashes_in_archive(monkeypatch, tmp_path):
     output = tmp_path / "demo.egg"
     monkeypatch.setattr(

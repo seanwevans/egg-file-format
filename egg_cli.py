@@ -29,24 +29,31 @@ def hatch(_args: argparse.Namespace) -> None:
 
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``egg`` command line interface."""
-    parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
-    subparsers = parser.add_subparsers(dest="command")
+    if argv is None:  # pragma: no cover - convenience for __main__
+        argv = sys.argv[1:]
 
-    parser.add_argument(
+    global_parser = argparse.ArgumentParser(add_help=False)
+    global_parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
         help="Show program version and exit",
     )
-    parser.add_argument(
+    global_parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity. Use -vv for debug output",
     )
+
+    parser = argparse.ArgumentParser(
+        description="Egg builder and hatcher CLI",
+        parents=[global_parser],
+    )
+    subparsers = parser.add_subparsers(dest="command")
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
 
@@ -75,7 +82,11 @@ def main() -> None:
     parser_hatch.add_argument("--no-sandbox", action="store_true", help="Run without sandbox (unsafe)")
     parser_hatch.set_defaults(func=hatch)
 
-    args = parser.parse_args()
+    args, remaining = parser.parse_known_args(argv)
+    if remaining:
+        extras = global_parser.parse_args(remaining)
+        for key, value in vars(extras).items():
+            setattr(args, key, value)
     if args.verbose >= 2:
         level = logging.DEBUG
     elif args.verbose == 1:
