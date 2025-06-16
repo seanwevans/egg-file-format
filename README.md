@@ -17,7 +17,7 @@ Inspired by the metaphor of the egg—slow to build, instant to hatch—egg file
 - **Audit & provenance:** Build logs and full environment info are baked into every file.
 
 *The repository currently implements a minimal prototype with a composer and
-hash verification utilities.  The broader features listed above are planned for
+hash verification and signing utilities.  The broader features listed above are planned for
 future releases.*
 
 ---
