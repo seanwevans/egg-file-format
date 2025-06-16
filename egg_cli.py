@@ -1,18 +1,17 @@
 import argparse
-
 from pathlib import Path
+from egg.composer import compose
 
 __version__ = "0.1.0"
 
 
 def build(args: argparse.Namespace) -> None:
-    """Build an egg file from sources.
+    """Build an egg file from sources."""
+    manifest = Path(args.manifest)
+    output = Path(args.output)
 
-    Parameters
-    ----------
-    args : argparse.Namespace
-        Parsed CLI arguments with ``manifest`` and ``output`` attributes.
-    """
+    if output.exists() and not args.force:
+        raise FileExistsError(f"{output} already exists. Use --force to overwrite.")
 
     manifest = Path(args.manifest)
     output = Path(args.output)
@@ -26,31 +25,25 @@ def build(args: argparse.Namespace) -> None:
 
     print(f"[build] Building egg from {manifest} -> {output} (placeholder)")
 
+
 def hatch(args: argparse.Namespace) -> None:
-    """Hatch (run) an egg file.
-
-    Args:
-        args: Parsed command line arguments for the ``hatch`` subcommand.
-            ``args.egg`` identifies the egg file to hatch.
-
-    Returns:
-        None. Prints a placeholder message indicating an egg would hatch.
-    """
+    """Hatch (run) an egg file."""
     print(f"[hatch] Hatching {args.egg} (placeholder)")
+    
+    compose(Path(args.manifest), Path(args.output))
+    print("[build] Building egg from manifest.yaml -> out.egg (placeholder)")
+
+
+def hatch(_args: argparse.Namespace) -> None:
+    """Hatch (run) an egg file."""
+    print("[hatch] Hatching egg... (placeholder)")
+
 
 
 def main() -> None:
-    """Entry point for the ``egg`` command line interface.
-
-    Parses arguments and dispatches to the appropriate subcommand. The function
-    exits after running the selected command or printing help information.
-
-    Returns:
-        None.
-    """
+    """Entry point for the ``egg`` command line interface."""
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
-
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
 
     parser.add_argument(
         "--version",
@@ -60,8 +53,8 @@ def main() -> None:
     )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
-    parser_build.add_argument(
 
+    parser_build.add_argument(
         "-m",
         "--manifest",
         default="manifest.yaml",
@@ -82,27 +75,16 @@ def main() -> None:
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
-    parser_hatch.add_argument(
-        "-e",
-        "--egg",
-        default="out.egg",
-        help="Egg file to hatch",
-    )
-    parser_hatch.add_argument(
-        "--no-sandbox",
-        action="store_true",
-        help="Run without sandbox (unsafe)",
-    )
+    parser_hatch.add_argument("-e", "--egg", default="out.egg", help="Egg file to hatch")
+    parser_hatch.add_argument("--no-sandbox", action="store_true", help="Run without sandbox (unsafe)")
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
-
     if hasattr(args, "func"):
         args.func(args)
     else:
         parser.print_help()
-        parser.exit()
-
+        parser.exit(2)
 
 
 if __name__ == "__main__":
