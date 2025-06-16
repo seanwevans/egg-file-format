@@ -161,3 +161,37 @@ cells:
     )
     with pytest.raises(ValueError):
         load_manifest(path)
+
+
+def test_manifest_root_not_mapping(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text("- just a list\n")
+    with pytest.raises(ValueError, match="Manifest root must be a mapping"):
+        load_manifest(path)
+
+
+def test_cells_must_be_list(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells: {}
+"""
+    )
+    with pytest.raises(ValueError, match="'cells' must be a list"):
+        load_manifest(path)
+
+
+def test_cell_must_be_mapping(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - hello.py
+"""
+    )
+    with pytest.raises(ValueError, match="Cell #0 must be a mapping"):
+        load_manifest(path)
