@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from egg.runtime_fetcher import fetch_runtime_blocks
+from egg.runtime_fetcher import fetch_runtime_blocks  # noqa: E402
 
 
 def base_manifest(tmpdir: Path, deps: str) -> Path:

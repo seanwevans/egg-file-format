@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from egg.precompute import get_lang_command, precompute_cells
+from egg.precompute import get_lang_command, precompute_cells  # noqa: E402
 
 
 def test_get_lang_command_env_override(monkeypatch):
