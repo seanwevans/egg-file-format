@@ -120,3 +120,57 @@ def test_hashing_import_guard(monkeypatch):
     assert str(exc.value) == (
         "PyYAML is required for egg hashing. Install with 'pip install PyYAML'"
     )
+
+
+def test_sign_hashes_env_override(monkeypatch, tmp_path):
+    """Setting EGG_SIGNING_KEY changes the produced signature."""
+    import importlib
+    import egg.hashing as hashing
+
+    data = tmp_path / "hashes.yaml"
+    data.write_text("a: 1\n")
+
+    default_sig = hashing.sign_hashes(data)
+
+    monkeypatch.setenv("EGG_SIGNING_KEY", "new-key")
+    hashing = importlib.reload(hashing)
+
+    sig = hashing.sign_hashes(data)
+    expected = hmac.new(b"new-key", data.read_bytes(), hashlib.sha256).hexdigest()
+
+    assert sig == expected
+    assert sig != default_sig
+
+
+def test_verify_archive_env_key(monkeypatch, tmp_path):
+    """Verification should honor EGG_SIGNING_KEY."""
+    import importlib
+    import egg.hashing as hashing
+
+    monkeypatch.setenv("EGG_SIGNING_KEY", "secret")
+    hashing = importlib.reload(hashing)
+
+    foo = tmp_path / "foo.txt"
+    foo.write_text("data")
+    hashes = hashing.compute_hashes([foo], base_dir=tmp_path)
+    hashes_path = tmp_path / "hashes.yaml"
+    hashing.write_hashes_file(hashes, hashes_path)
+    sig = hashing.sign_hashes(hashes_path)
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(sig)
+
+    archive = tmp_path / "demo.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for path in [foo, hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as f:
+                zf.writestr(zi, f.read())
+
+    assert hashing.verify_archive(archive)
+
+    # Wrong key should fail verification
+    monkeypatch.setenv("EGG_SIGNING_KEY", "other")
+    hashing = importlib.reload(hashing)
+    assert not hashing.verify_archive(archive)
