@@ -1,4 +1,5 @@
 import argparse
+import sys
 from pathlib import Path
 from egg.composer import compose
 
@@ -83,7 +84,7 @@ def main() -> None:
     if hasattr(args, "func"):
         args.func(args)
     else:
-        parser.print_help()
+        parser.print_help(sys.stderr)
         parser.exit(2)
 
 

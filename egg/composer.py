@@ -6,9 +6,11 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 import yaml
+
+from .hashing import compute_hashes, write_hashes_file
 
 
 def _collect_sources(manifest: dict, base_dir: Path) -> Iterable[Path]:
@@ -37,12 +39,28 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
+        copied: List[Path] = []
         # copy manifest
-        shutil.copy2(manifest_path, tmpdir_path / manifest_path.name)
+        manifest_copy = tmpdir_path / manifest_path.name
+        shutil.copy2(manifest_path, manifest_copy)
+        copied.append(manifest_copy)
+
         # copy referenced sources
         for src in _collect_sources(manifest, manifest_path.parent):
-            shutil.copy2(src, tmpdir_path / src.name)
+            dest = tmpdir_path / src.name
+            shutil.copy2(src, dest)
+            copied.append(dest)
 
-        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
-            for file in tmpdir_path.iterdir():
-                zf.write(file, arcname=file.name)
+        # write hashes file
+        hashes = compute_hashes(copied)
+        hashes_path = tmpdir_path / "hashes.yaml"
+        write_hashes_file(hashes, hashes_path)
+        copied.append(hashes_path)
+
+        with zipfile.ZipFile(output_path, "w") as zf:
+            for file in sorted(copied, key=lambda p: p.name):
+                zi = zipfile.ZipInfo(file.name)
+                zi.date_time = (1980, 1, 1, 0, 0, 0)
+                zi.compress_type = zipfile.ZIP_DEFLATED
+                with open(file, "rb") as f:
+                    zf.writestr(zi, f.read())
