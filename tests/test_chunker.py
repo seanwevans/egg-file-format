@@ -22,5 +22,3 @@ def test_chunk_deterministic(tmp_path: Path) -> None:
     second = chunk(f, chunk_size=4)
     assert first == expected
     assert second == expected
-
-

@@ -35,4 +35,3 @@ def chunk(path: Path | str, *, chunk_size: int = 1_048_576) -> List[Dict[str, in
             metadata.append({"offset": offset, "size": size})
             offset += size
     return metadata
-
