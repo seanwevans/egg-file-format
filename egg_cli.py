@@ -28,7 +28,6 @@ def hatch(_args: argparse.Namespace) -> None:
     logger.info("[hatch] Hatching egg... (placeholder)")
 
 
-
 def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``egg`` command line interface."""
     if argv is None:  # pragma: no cover - convenience for __main__
@@ -78,8 +77,12 @@ def main(argv: list[str] | None = None) -> None:
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
-    parser_hatch.add_argument("-e", "--egg", default="out.egg", help="Egg file to hatch")
-    parser_hatch.add_argument("--no-sandbox", action="store_true", help="Run without sandbox (unsafe)")
+    parser_hatch.add_argument(
+        "-e", "--egg", default="out.egg", help="Egg file to hatch"
+    )
+    parser_hatch.add_argument(
+        "--no-sandbox", action="store_true", help="Run without sandbox (unsafe)"
+    )
     parser_hatch.set_defaults(func=hatch)
 
     args, remaining = parser.parse_known_args(argv)
