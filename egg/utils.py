@@ -54,7 +54,14 @@ def load_plugins() -> None:
 
     eps = entry_points()
 
-    for ep in eps.select(group=RUNTIME_PLUGIN_GROUP):
+    if hasattr(eps, "select"):
+        runtime_eps = eps.select(group=RUNTIME_PLUGIN_GROUP)
+        agent_eps = eps.select(group=AGENT_PLUGIN_GROUP)
+    else:  # pragma: no cover - compatibility
+        runtime_eps = eps.get(RUNTIME_PLUGIN_GROUP, [])
+        agent_eps = eps.get(AGENT_PLUGIN_GROUP, [])
+
+    for ep in runtime_eps:
         try:
             handler = ep.load()
             extra = handler()
@@ -64,7 +71,7 @@ def load_plugins() -> None:
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading runtime plug-in %s: %s", ep.name, exc)
 
-    for ep in eps.select(group=AGENT_PLUGIN_GROUP):
+    for ep in agent_eps:
         try:
             ep.load()()
             logger.debug("[plugins] loaded agent %s", ep.name)
