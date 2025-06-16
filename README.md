@@ -129,6 +129,10 @@ packages like PyYAML are available. Then run `pytest` to execute the test
 suite. You can also check formatting or style with tools like `ruff` or
 `black`.
 
+## Citation
+
+If you use this project in your research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
+
 ---
 
 ## License
