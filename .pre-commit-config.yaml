@@ -16,11 +16,15 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: >-
-          pytest --cov=egg --cov=egg_cli --cov-report=xml \
-                 --cov-report=term-missing:skip-covered -q
+        entry: pytest
         language: system
-        types: [python]
+        pass_filenames: false
+        args:
+          - --cov=egg
+          - --cov=egg_cli
+          - --cov-report=xml
+          - --cov-report=term-missing:skip-covered
+          - -q
       - id: update-badges
         name: update-badges
         entry: python scripts/update_badges.py
