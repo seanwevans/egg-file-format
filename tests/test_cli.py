@@ -9,6 +9,7 @@ import subprocess
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
+from egg.hashing import verify_archive
 
 
 def test_build(monkeypatch, tmp_path, caplog):
@@ -263,3 +264,59 @@ def test_verify_failure(monkeypatch, tmp_path):
     )
     with pytest.raises(SystemExit):
         egg_cli.main()
+
+
+def test_build_verification_success(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    egg_cli.main()
+
+    assert output.is_file()
+    assert verify_archive(output)
+
+
+def test_build_detects_tampering(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+
+    original = egg_cli.compose
+
+    def tamper(manifest, out):
+        original(manifest, out)
+        with zipfile.ZipFile(out, "r") as zf:
+            contents = {name: zf.read(name) for name in zf.namelist()}
+        contents["hello.py"] = b"print('tampered')\n"
+        with zipfile.ZipFile(out, "w") as zf:
+            for name, data in contents.items():
+                info = zipfile.ZipInfo(name)
+                info.date_time = (1980, 1, 1, 0, 0, 0)
+                info.compress_type = zipfile.ZIP_DEFLATED
+                zf.writestr(info, data)
+
+    monkeypatch.setattr(egg_cli, "compose", tamper)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert "Hash verification failed" in str(exc.value)
