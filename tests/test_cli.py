@@ -83,6 +83,7 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     )
     assert any(cmd[0] == "Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
     assert f"[hatch] Completed running {egg_path}" in caplog.text
+    assert "Sandboxing is not yet implemented" in caplog.text
 
 
 def test_hatch_bash(monkeypatch, tmp_path, caplog):

@@ -47,6 +47,11 @@ def hatch(args: argparse.Namespace) -> None:
     if not verify_archive(egg_path):
         raise SystemExit("Hash verification failed")
 
+    if not args.no_sandbox:
+        logger.warning(
+            "[hatch] Sandboxing is not yet implemented; running without isolation"
+        )
+
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
         zf.extractall(tmpdir)
         manifest_path = Path(tmpdir) / "manifest.yaml"
