@@ -9,7 +9,12 @@ from typing import Dict, Iterable
 
 import zipfile
 
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError as exc:  # pragma: no cover - import guard
+    raise ModuleNotFoundError(
+        "PyYAML is required for egg hashing. Install with 'pip install PyYAML'"
+    ) from exc
 
 
 _CHUNK_SIZE = 8192
