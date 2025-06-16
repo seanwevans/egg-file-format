@@ -5,6 +5,7 @@ import hashlib
 import yaml
 import pytest
 import logging
+import subprocess
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
@@ -41,11 +42,42 @@ def test_build(monkeypatch, tmp_path, caplog):
     assert "hello.R" in names
 
 
-def test_hatch(monkeypatch, caplog):
-    caplog.set_level(logging.INFO)
-    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "--verbose", "hatch"])
+def test_hatch(monkeypatch, tmp_path, caplog):
+    egg_path = tmp_path / "demo.egg"
+
+    # build an egg first
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
     egg_cli.main()
-    assert "[hatch] Hatching egg... (placeholder)" in caplog.text
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "hatch", "--egg", str(egg_path)],
+    )
+    egg_cli.main()
+
+    assert any(cmd[0] == sys.executable and cmd[1].endswith("hello.py") for cmd in calls)
+    assert any(cmd[0] == "Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
+    assert f"[hatch] Completed running {egg_path}" in caplog.text
 
 
 def test_requires_subcommand(monkeypatch):
