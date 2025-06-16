@@ -36,6 +36,11 @@ Egg is built on a modular, agent-based system. Each agent is responsible for a d
 - Agents are coordinated by a build pipeline manager (Egg Builder).
 - Each agent logs its actions for build reproducibility and provenance.
 
+### 🧰 CLI Modules
+- **egg_cli.py** – lightweight command wrapper exposing `build` and `hatch`
+  commands. The CLI parses the manifest file and invokes the builder
+  orchestration described above.
+
 ---
 
 See [FORMAT.md](FORMAT.md) for the file structure agents produce.

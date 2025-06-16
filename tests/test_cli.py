@@ -9,11 +9,14 @@ def test_build(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "build"])
     egg_cli.main()
     captured = capsys.readouterr()
-    assert "[build] Building egg... (placeholder)" in captured.out
+    assert (
+        "[build] Building egg from manifest.yaml -> out.egg (placeholder)"
+        in captured.out
+    )
 
 
 def test_hatch(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch"])
     egg_cli.main()
     captured = capsys.readouterr()
-    assert "[hatch] Hatching egg... (placeholder)" in captured.out
+    assert "[hatch] Hatching out.egg (placeholder)" in captured.out

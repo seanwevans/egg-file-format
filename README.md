@@ -48,24 +48,35 @@ pip install .
 
 ## Usage
 
-After installation the `egg` command becomes available:
+After installation the `egg` command becomes available. The CLI has two
+subcommands with a few options:
 
 ```bash
-egg build  # assemble an egg (placeholder)
-egg hatch  # run an egg (placeholder)
+egg build --manifest <file> --output <egg> [--force]
+egg hatch --egg <egg> [--no-sandbox]
 ```
+
+Use `egg <command> -h` to see all options.
 
 ### Example Build Walkthrough
 
-Once the real build pipeline lands, you will be able to assemble the sample
-notebook into an `.egg` file with:
+Below is a minimal walkthrough using the placeholder implementation:
 
-```bash
-python egg_cli.py build examples/manifest.yaml
-```
+1. Prepare the demo manifest and sources found in `examples/`.
+2. Run the build command specifying the manifest and desired output:
 
-This command will read the manifest, gather runtimes and assets, and emit a
-single `demo.egg` file. For details about the resulting layout, see
+   ```bash
+   egg build --manifest examples/manifest.yaml --output demo.egg
+   ```
+
+3. Hatch the resulting file:
+
+   ```bash
+   egg hatch --egg demo.egg
+   ```
+
+The builder reads `manifest.yaml`, gathers runtimes and assets, and emits the
+`demo.egg` file. For details about the resulting layout, see
 [FORMAT.md#example-layout](FORMAT.md#example-layout). Progress on the builder
 pipeline is tracked in the
 [v0.5 – Builder Pipeline](ROADMAP.md#v05--builder-pipeline) section of the
