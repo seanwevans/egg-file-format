@@ -36,6 +36,13 @@ Inspired by the metaphor of the egg—slow to build, instant to hatch—egg file
 - See [SECURITY.md](SECURITY.md) for sandboxing and threat model.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to join the hatch!
 
+You can try the placeholder command-line interface today:
+
+```bash
+python egg_cli.py build  # assemble an egg (placeholder)
+python egg_cli.py hatch  # run an egg (placeholder)
+```
+
 ---
 
 ## License
