@@ -1,8 +1,10 @@
 import os
 import sys
 from pathlib import Path
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from egg.chunker import chunk
+
 
 def test_chunk_deterministic(tmp_path: Path) -> None:
     data = b"abcdefghij"  # 10 bytes
