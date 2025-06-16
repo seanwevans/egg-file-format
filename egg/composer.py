@@ -9,13 +9,8 @@ from pathlib import Path
 from typing import Iterable, List
 
 from .utils import _is_relative_to
+from .manifest import load_manifest, Manifest
 
-try:
-    import yaml
-except ModuleNotFoundError as exc:  # pragma: no cover - import guard
-    raise ModuleNotFoundError(
-        "PyYAML is required to use egg composer. Install with 'pip install PyYAML'"
-    ) from exc
 
 from .hashing import compute_hashes, write_hashes_file, sign_hashes, SIGNING_KEY
 
@@ -50,12 +45,10 @@ def _normalize_source(path: str | Path, manifest_dir: Path) -> Path:
     return abs_path.relative_to(manifest_dir)
 
 
-def _collect_sources(manifest: dict, manifest_dir: Path) -> Iterable[Path]:
-    """Yield normalized relative paths referenced in the manifest."""
-    for cell in manifest.get("cells", []):
-        source = cell.get("source")
-        if source:
-            yield _normalize_source(source, manifest_dir)
+def _collect_sources(manifest: Manifest) -> Iterable[Path]:
+    """Yield normalized cell source paths from ``manifest``."""
+    for cell in manifest.cells:
+        yield Path(cell.source)
 
 
 def compose(manifest_path: Path | str, output_path: Path | str) -> None:
@@ -71,8 +64,7 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
     manifest_path = Path(manifest_path)
     output_path = Path(output_path)
 
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        manifest = yaml.safe_load(f)
+    manifest = load_manifest(manifest_path)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
@@ -84,7 +76,7 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
 
         manifest_dir = manifest_path.parent
         # copy referenced sources
-        for rel_src in _collect_sources(manifest, manifest_dir):
+        for rel_src in _collect_sources(manifest):
             src = manifest_dir / rel_src
             if not src.is_file():
                 raise FileNotFoundError(

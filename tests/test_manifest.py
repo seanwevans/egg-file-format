@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from egg.manifest import Cell, Manifest, load_manifest  # noqa: E402
 
 EXAMPLE_MANIFEST = Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml"
+EXAMPLE_ADV_MANIFEST = (
+    Path(__file__).resolve().parent.parent / "examples" / "advanced_manifest.yaml"
+)
 
 
 def test_load_manifest_example():
@@ -246,3 +249,21 @@ cells:
     )
     with pytest.raises(ValueError, match="Permission 'network' must be a boolean"):
         load_manifest(path)
+
+
+def test_manifest_with_dependencies(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+dependencies:
+  - python:3.11
+  - r:4.3
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    manifest = load_manifest(path)
+    assert manifest.dependencies == ["python:3.11", "r:4.3"]

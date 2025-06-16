@@ -17,7 +17,7 @@
 - **Scalable:** Designed for GB–TB scale data with instant loading.
 - **Audit & provenance:** Full build logs and environment info baked in.
 
-*This repository implements a minimal prototype featuring a composer and hash verification utilities. The broader features above are planned for future releases.*
+*This repository implements a minimal prototype with additional agents for fetching runtimes, sandboxing, precomputing outputs and deterministic chunking. The broader features above are planned for future releases.*
 
 ---
 

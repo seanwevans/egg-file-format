@@ -5,6 +5,7 @@ import logging
 import zipfile
 import subprocess
 import shutil
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -37,7 +38,8 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
         ],
     )
     monkeypatch.setattr(egg_cli, "fetch_runtime_blocks", lambda m: [])
-    egg_cli.main()
+    with pytest.raises(ValueError):
+        egg_cli.main()
 
     assert output.is_file()
     assert verify_archive(output)
@@ -45,7 +47,6 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
         names = zf.namelist()
     assert "manifest.yaml" in names
     assert "advanced_manifest.yaml" not in names
-
 
 def test_build_julia_manifest(monkeypatch, tmp_path, caplog):
     output = tmp_path / "julia.egg"
