@@ -21,6 +21,7 @@ jobs:
         pip install pytest flake8 black
         pip install -e .
     - name: Commit formatted code
+      if: github.event_name == 'push'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
