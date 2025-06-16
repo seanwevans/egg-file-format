@@ -1,3 +1,5 @@
+"""Command line interface for building and running egg archives."""
+
 import argparse
 import logging
 import os
