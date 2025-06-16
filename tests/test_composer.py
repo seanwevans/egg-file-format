@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
-from egg.composer import _normalize_source, compose
+from egg.manifest import _normalize_source
+from egg.composer import compose
 
 
 def test_normalize_source_absolute(tmp_path: Path) -> None:

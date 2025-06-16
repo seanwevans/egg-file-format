@@ -8,41 +8,10 @@ import zipfile
 from pathlib import Path
 from typing import Iterable, List
 
-from .utils import _is_relative_to
 from .manifest import load_manifest, Manifest
 
 
 from .hashing import compute_hashes, write_hashes_file, sign_hashes, SIGNING_KEY
-
-
-def _normalize_source(path: str | Path, manifest_dir: Path) -> Path:
-    """Return a normalized path relative to ``manifest_dir``.
-
-    Parameters
-    ----------
-    path:
-        Source path from the manifest.
-    manifest_dir:
-        Directory containing the manifest file.
-
-    Returns
-    -------
-    Path
-        Normalized path relative to ``manifest_dir``.
-
-    Raises
-    ------
-    ValueError
-        If the path is absolute or resolves outside ``manifest_dir``.
-    """
-    p = Path(path)
-    if p.is_absolute():
-        raise ValueError(f"Absolute source paths are not allowed: {path}")
-    manifest_dir = manifest_dir.resolve()
-    abs_path = (manifest_dir / p).resolve(strict=False)
-    if not _is_relative_to(abs_path, manifest_dir):
-        raise ValueError(f"Source path escapes manifest directory: {path}")
-    return abs_path.relative_to(manifest_dir)
 
 
 def _collect_sources(manifest: Manifest) -> Iterable[Path]:
