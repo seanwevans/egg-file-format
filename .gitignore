@@ -13,3 +13,4 @@ dist/
 Thumbs.db
 pylint.log
 coverage.xml
+.coverage

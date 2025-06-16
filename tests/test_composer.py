@@ -37,3 +37,23 @@ dependencies:
     output = tmp_path / "demo.egg"
     with pytest.raises(ValueError):
         compose(manifest, output, dependencies=[dep1, dep2])
+
+
+def test_compose_creates_output_dir(tmp_path: Path) -> None:
+    src = tmp_path / "code.py"
+    src.write_text("print('hi')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+"""
+    )
+
+    output = tmp_path / "new" / "demo.egg"
+    compose(manifest, output)
+    assert output.is_file()
