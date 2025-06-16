@@ -38,11 +38,21 @@ You can start experimenting with a minimal two-language notebook using
 - See [SECURITY.md](SECURITY.md) for sandboxing and threat model.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to join the hatch!
 
-You can try the placeholder command-line interface today:
+## Installation
+
+Install the CLI from source with `pip`:
 
 ```bash
-python egg_cli.py build  # assemble an egg (placeholder)
-python egg_cli.py hatch  # run an egg (placeholder)
+pip install .
+```
+
+## Usage
+
+After installation the `egg` command becomes available:
+
+```bash
+egg build  # assemble an egg (placeholder)
+egg hatch  # run an egg (placeholder)
 ```
 
 ---

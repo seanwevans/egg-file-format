@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "egg-file-format"
+version = "0.1.0"
+authors = [{ name = "egg contributors" }]
+readme = "README.md"
+description = "CLI tools for the egg file format"
+requires-python = ">=3.8"
+
+[project.scripts]
+egg = "egg_cli:main"
+
+[tool.setuptools]
+py-modules = ["egg_cli"]
