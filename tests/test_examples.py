@@ -37,8 +37,9 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
         ],
     )
     monkeypatch.setattr(egg_cli, "fetch_runtime_blocks", lambda m: [])
-    with pytest.raises(ValueError):
-        egg_cli.main()
+    egg_cli.main()
+    assert output.is_file()
+    assert verify_archive(output)
 
 
 def test_build_julia_manifest(monkeypatch, tmp_path, caplog):
