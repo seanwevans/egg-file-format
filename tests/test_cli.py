@@ -7,10 +7,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import zipfile
 
 import egg_cli  # noqa: E402
-import pytest
 
 
-def test_build(monkeypatch, tmp_path):
+def test_build(monkeypatch, tmp_path, capsys):
     output = tmp_path / "demo.egg"
     monkeypatch.setattr(
         sys,
@@ -27,10 +26,8 @@ def test_build(monkeypatch, tmp_path):
     egg_cli.main()
 
     captured = capsys.readouterr()
-    assert (
-        "[build] Building egg from manifest.yaml -> out.egg (placeholder)"
-        in captured.out
-    )
+    expected = f"[build] Building egg from examples/manifest.yaml -> {output}"
+    assert expected in captured.out
 
 
     assert output.is_file()
