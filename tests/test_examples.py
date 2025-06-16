@@ -29,6 +29,7 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
             str(output),
         ],
     )
+    monkeypatch.setattr(egg_cli, "fetch_runtime_blocks", lambda m: [])
     egg_cli.main()
 
     assert output.is_file()

@@ -11,6 +11,8 @@
 - No direct access to host filesystem, network, or devices unless explicitly permitted by manifest.
 - Each VM has strict resource quotas (CPU, RAM, disk, time limits).
 - During `egg hatch`, the sandboxer builds a container image for each runtime.
+- In this prototype, the sandboxer simply writes a placeholder `microvm.conf`
+  file instead of building a real image.
 - Passing `--no-sandbox` disables this isolation and should only be used for testing.
 
 ### Integrity & Authenticity
