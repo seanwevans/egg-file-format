@@ -106,6 +106,12 @@ def info(args: argparse.Namespace) -> None:
 
     print(f"Name: {manifest.name}")
     print(f"Description: {manifest.description}")
+    if manifest.author is not None:
+        print(f"Author: {manifest.author}")
+    if manifest.license is not None:
+        print(f"License: {manifest.license}")
+    if manifest.created is not None:
+        print(f"Created: {manifest.created}")
     print("Cells:")
     for cell in manifest.cells:
         print(f"  - {cell.language}: {cell.source}")
