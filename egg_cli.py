@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from egg.composer import compose
+from egg.hashing import verify_archive
 
 __version__ = "0.1.0"
 
@@ -26,6 +27,17 @@ def build(args: argparse.Namespace) -> None:
 def hatch(_args: argparse.Namespace) -> None:
     """Hatch (run) an egg file."""
     logger.info("[hatch] Hatching egg... (placeholder)")
+
+
+def verify(args: argparse.Namespace) -> None:
+    """Verify that an egg archive matches its recorded hashes."""
+    egg_path = Path(args.egg)
+    if not egg_path.is_file():
+        raise SystemExit(f"Egg file not found: {egg_path}")
+    if verify_archive(egg_path):
+        logger.info("[verify] %s verified successfully", egg_path)
+    else:
+        raise SystemExit("Hash verification failed")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -84,6 +96,15 @@ def main(argv: list[str] | None = None) -> None:
         "--no-sandbox", action="store_true", help="Run without sandbox (unsafe)"
     )
     parser_hatch.set_defaults(func=hatch)
+
+    parser_verify = subparsers.add_parser("verify", help="Verify an egg archive")
+    parser_verify.add_argument(
+        "-e",
+        "--egg",
+        default="out.egg",
+        help="Egg file to verify",
+    )
+    parser_verify.set_defaults(func=verify)
 
     args, remaining = parser.parse_known_args(argv)
     if remaining:
