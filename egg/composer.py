@@ -8,6 +8,8 @@ import zipfile
 from pathlib import Path
 from typing import Iterable, List
 
+from .utils import _is_relative_to
+
 try:
     import yaml
 except ModuleNotFoundError as exc:  # pragma: no cover - import guard
@@ -43,7 +45,7 @@ def _normalize_source(path: str | Path, manifest_dir: Path) -> Path:
         raise ValueError(f"Absolute source paths are not allowed: {path}")
     manifest_dir = manifest_dir.resolve()
     abs_path = (manifest_dir / p).resolve(strict=False)
-    if not abs_path.is_relative_to(manifest_dir):
+    if not _is_relative_to(abs_path, manifest_dir):
         raise ValueError(f"Source path escapes manifest directory: {path}")
     return abs_path.relative_to(manifest_dir)
 
