@@ -82,6 +82,92 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     assert f"[hatch] Completed running {egg_path}" in caplog.text
 
 
+def test_hatch_bash(monkeypatch, tmp_path, caplog):
+    """Hatching should invoke bash for bash cells."""
+    script = tmp_path / "hello.sh"
+    script.write_text("echo hi\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: bash
+    source: hello.sh
+"""
+    )
+    egg_path = tmp_path / "demo.egg"
+
+    # build the egg
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "hatch", "--egg", str(egg_path)],
+    )
+    egg_cli.main()
+
+    assert any(cmd[0] == "bash" and cmd[1].endswith("hello.sh") for cmd in calls)
+    assert f"[hatch] Completed running {egg_path}" in caplog.text
+
+
+def test_hatch_unknown_language(monkeypatch, tmp_path):
+    """Unknown cell languages should produce a clear error."""
+    src = tmp_path / "hello.foo"
+    src.write_text("echo hi\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: foo
+    source: hello.foo
+"""
+    )
+    egg_path = tmp_path / "demo.egg"
+    # build
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
 def test_requires_subcommand(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit) as exc:
