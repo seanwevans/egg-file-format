@@ -6,6 +6,7 @@ import yaml
 import pytest
 import logging
 import subprocess
+import shutil
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
@@ -67,6 +68,7 @@ def test_hatch(monkeypatch, tmp_path, caplog):
         calls.append(cmd)
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
 
     caplog.set_level(logging.INFO)
     monkeypatch.setattr(
@@ -120,6 +122,7 @@ cells:
         calls.append(cmd)
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
 
     caplog.set_level(logging.INFO)
     monkeypatch.setattr(
@@ -167,6 +170,37 @@ cells:
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
     with pytest.raises(SystemExit):
         egg_cli.main()
+
+
+def test_hatch_missing_runtime(monkeypatch, tmp_path):
+    """Hatching should fail if the required runtime command is missing."""
+    egg_path = tmp_path / "demo.egg"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
+
+    def fake_which(cmd: str):
+        return None if cmd == "Rscript" else cmd
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit) as exc:
+        egg_cli.main()
+    assert "Rscript" in str(exc.value)
 
 
 def test_requires_subcommand(monkeypatch, capsys):
