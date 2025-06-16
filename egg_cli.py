@@ -13,6 +13,7 @@ from pathlib import Path
 from egg.composer import compose
 from egg.hashing import verify_archive
 from egg.manifest import load_manifest
+from egg.runtime_fetcher import fetch_runtime_blocks
 
 __version__ = "0.1.0"
 
@@ -41,6 +42,9 @@ def build(args: argparse.Namespace) -> None:
 
     if output.exists() and not args.force:
         raise SystemExit(f"{output} exists. Use --force to overwrite.")
+
+    # Fetch any runtime dependencies referenced in the manifest
+    fetch_runtime_blocks(manifest)
 
     compose(manifest, output)
 
