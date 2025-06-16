@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import zipfile
 import sys
+import shutil
 from pathlib import Path
 
 from egg.composer import compose
@@ -57,6 +58,11 @@ def hatch(args: argparse.Namespace) -> None:
             base_cmd = LANG_COMMANDS.get(lang)
             if base_cmd is None:
                 raise SystemExit(f"Unsupported language: {cell.language}")
+            cmd = base_cmd[0]
+            if shutil.which(cmd) is None:
+                raise SystemExit(
+                    f"Required runtime '{cmd}' for {cell.language} cells not found"
+                )
             subprocess.run(base_cmd + [str(src)], check=True)
 
     logger.info("[hatch] Completed running %s", egg_path)
