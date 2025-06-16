@@ -59,6 +59,14 @@ def test_duplicate_basenames(tmp_path: Path) -> None:
         compute_hashes([f1, f2])
 
 
+def test_load_hashes_requires_mapping(tmp_path: Path) -> None:
+    """Non-mapping YAML content should raise ValueError."""
+    path = tmp_path / "hashes.yaml"
+    path.write_text("- a\n- b\n")
+    with pytest.raises(ValueError):
+        load_hashes(path)
+
+
 def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
     """Archives containing files not listed in hashes.yaml should fail."""
     output = tmp_path / "demo.egg"

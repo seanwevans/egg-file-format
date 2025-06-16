@@ -80,7 +80,13 @@ def write_hashes_file(hashes: Dict[str, str], path: Path) -> None:
 def load_hashes(path: Path) -> Dict[str, str]:
     """Load a YAML file of hashes."""
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f)
+
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ValueError("hashes.yaml must contain a mapping")
+    return data
 
 
 def sign_hashes(path: Path, *, key: bytes | None = None) -> str:
