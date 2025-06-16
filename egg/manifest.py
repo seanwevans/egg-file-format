@@ -32,6 +32,7 @@ class Manifest:
     description: str
     cells: List[Cell]
     permissions: dict[str, bool] | None = None
+    dependencies: List[str] | None = None
 
 
 def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
@@ -65,7 +66,7 @@ def load_manifest(path: Path | str) -> Manifest:
         raise ValueError("Manifest root must be a mapping")
 
     required_fields = {"name", "description", "cells"}
-    optional_fields = {"permissions"}
+    optional_fields = {"permissions", "dependencies"}
     for field in required_fields:
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
@@ -98,6 +99,19 @@ def load_manifest(path: Path | str) -> Manifest:
                 raise ValueError(f"Permission '{perm}' must be a boolean")
             permissions[str(perm)] = val
 
+    deps_data = data.get("dependencies")
+    dependencies: List[str] | None
+    if deps_data is None:
+        dependencies = None
+    else:
+        if not isinstance(deps_data, list):
+            raise ValueError("'dependencies' must be a list")
+        dependencies = []
+        for i, dep in enumerate(deps_data):
+            if not isinstance(dep, str):
+                raise ValueError("dependency entries must be strings")
+            dependencies.append(dep)
+
     manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
     for i, cell in enumerate(cells_data):
@@ -117,4 +131,5 @@ def load_manifest(path: Path | str) -> Manifest:
         description=data["description"],
         cells=cells,
         permissions=permissions,
+        dependencies=dependencies,
     )
