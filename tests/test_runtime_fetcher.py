@@ -51,3 +51,25 @@ dependencies:
 
     with pytest.raises(FileNotFoundError):
         fetch_runtime_blocks(manifest)
+
+
+def test_container_dependencies(tmp_path: Path) -> None:
+    """Container-style specs should be returned without file checks."""
+    (tmp_path / "code.py").write_text("print('hi')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+  - r:4.3
+"""
+    )
+
+    paths = fetch_runtime_blocks(manifest)
+    assert paths == ["python:3.11", "r:4.3"]
