@@ -25,6 +25,18 @@ class Manifest:
     cells: List[Cell]
 
 
+def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
+    """Normalize a cell source path and ensure it stays within ``manifest_dir``."""
+    p = Path(path)
+    if p.is_absolute():
+        raise ValueError(f"Absolute source paths are not allowed: {path}")
+    manifest_dir = manifest_dir.resolve()
+    abs_path = (manifest_dir / p).resolve(strict=False)
+    if not abs_path.is_relative_to(manifest_dir):
+        raise ValueError(f"Source path escapes manifest directory: {path}")
+    return abs_path.relative_to(manifest_dir).as_posix()
+
+
 def load_manifest(path: Path | str) -> Manifest:
     """Load a manifest from a YAML file.
 
@@ -63,6 +75,7 @@ def load_manifest(path: Path | str) -> Manifest:
     if not isinstance(cells_data, list):
         raise ValueError("'cells' must be a list")
 
+    manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
     for i, cell in enumerate(cells_data):
         if not isinstance(cell, dict):
@@ -73,6 +86,7 @@ def load_manifest(path: Path | str) -> Manifest:
             raise ValueError(f"Cell #{i} 'language' must be a string")
         if not isinstance(cell["source"], str):
             raise ValueError(f"Cell #{i} 'source' must be a string")
-        cells.append(Cell(language=cell["language"], source=cell["source"]))
+        normalized = _normalize_source(cell["source"], manifest_dir)
+        cells.append(Cell(language=cell["language"], source=normalized))
 
     return Manifest(name=data["name"], description=data["description"], cells=cells)

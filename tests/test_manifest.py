@@ -128,3 +128,36 @@ extra: value
     )
     with pytest.raises(ValueError):
         load_manifest(path)
+
+
+def test_source_outside_manifest_dir(tmp_path: Path) -> None:
+    """Paths escaping the manifest directory should be rejected."""
+    manifest_dir = tmp_path / "nested"
+    manifest_dir.mkdir()
+    path = manifest_dir / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: ../evil.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
+
+
+def test_source_absolute_path(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: /abs.py
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)

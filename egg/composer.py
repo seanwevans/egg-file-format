@@ -18,12 +18,42 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 from .hashing import compute_hashes, write_hashes_file, sign_hashes, SIGNING_KEY
 
 
-def _collect_sources(manifest: dict) -> Iterable[Path]:
-    """Yield relative paths referenced in the manifest."""
+def _normalize_source(path: str | Path, manifest_dir: Path) -> Path:
+    """Return a normalized path relative to ``manifest_dir``.
+
+    Parameters
+    ----------
+    path:
+        Source path from the manifest.
+    manifest_dir:
+        Directory containing the manifest file.
+
+    Returns
+    -------
+    Path
+        Normalized path relative to ``manifest_dir``.
+
+    Raises
+    ------
+    ValueError
+        If the path is absolute or resolves outside ``manifest_dir``.
+    """
+    p = Path(path)
+    if p.is_absolute():
+        raise ValueError(f"Absolute source paths are not allowed: {path}")
+    manifest_dir = manifest_dir.resolve()
+    abs_path = (manifest_dir / p).resolve(strict=False)
+    if not abs_path.is_relative_to(manifest_dir):
+        raise ValueError(f"Source path escapes manifest directory: {path}")
+    return abs_path.relative_to(manifest_dir)
+
+
+def _collect_sources(manifest: dict, manifest_dir: Path) -> Iterable[Path]:
+    """Yield normalized relative paths referenced in the manifest."""
     for cell in manifest.get("cells", []):
         source = cell.get("source")
         if source:
-            yield Path(source)
+            yield _normalize_source(source, manifest_dir)
 
 
 def compose(manifest_path: Path | str, output_path: Path | str) -> None:
@@ -50,9 +80,10 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
         shutil.copy2(manifest_path, manifest_copy)
         copied.append(manifest_copy)
 
+        manifest_dir = manifest_path.parent
         # copy referenced sources
-        for rel_src in _collect_sources(manifest):
-            src = manifest_path.parent / rel_src
+        for rel_src in _collect_sources(manifest, manifest_dir):
+            src = manifest_dir / rel_src
             if not src.is_file():
                 raise FileNotFoundError(
                     f"Source file not found: {src} (referenced from {manifest_path})"
