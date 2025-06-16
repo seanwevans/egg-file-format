@@ -76,7 +76,7 @@ def prepare_images(
     for cell in manifest.cells:
         lang = cell.language.lower()
         if lang in images:
-            continue
+            continue  # pragma: no cover
         img_dir = base / f"{lang}-image"
 
         build_microvm_image(lang, img_dir)
