@@ -8,7 +8,9 @@ from egg.manifest import Manifest, Cell  # noqa: E402
 from egg.sandboxer import prepare_images  # noqa: E402
 
 
-def test_prepare_images_creates_dirs_and_config(tmp_path: Path) -> None:
+
+def test_prepare_images_writes_config(tmp_path: Path) -> None:
+
     manifest = Manifest(
         name="Example",
         description="desc",
@@ -26,3 +28,4 @@ def test_prepare_images_creates_dirs_and_config(tmp_path: Path) -> None:
         config = path / "microvm.json"
         assert config.is_file()
         assert config.read_text()
+

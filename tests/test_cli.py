@@ -90,12 +90,18 @@ def test_hatch(monkeypatch, tmp_path, caplog):
 
     calls: list[list[str]] = []
     sb_calls: list[list[str]] = []
+    sb_configs: list[bool] = []
 
     def fake_run(cmd, check=True):
         calls.append(cmd)
 
+    from egg import sandboxer
+
     def fake_prepare(manifest, dest):
-        sb_calls.append(sorted({c.language.lower() for c in manifest.cells}))
+        images = sandboxer.prepare_images(manifest, dest)
+        sb_calls.append(sorted(images.keys()))
+        sb_configs.append(all((p / "microvm.conf").is_file() for p in images.values()))
+        return images
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
@@ -115,6 +121,7 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     assert any(cmd[0] == "Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
     assert f"[hatch] Completed running {egg_path}" in caplog.text
     assert sb_calls == [["python", "r"]]
+    assert sb_configs == [True]
 
 
 def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
