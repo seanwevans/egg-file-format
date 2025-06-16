@@ -2,8 +2,6 @@ import argparse
 from pathlib import Path
 from egg.composer import compose
 
-from egg import compose
-
 __version__ = "0.1.0"
 
 
@@ -15,8 +13,17 @@ def build(args: argparse.Namespace) -> None:
     if output.exists() and not args.force:
         raise FileExistsError(f"{output} already exists. Use --force to overwrite.")
 
+    manifest = Path(args.manifest)
+    output = Path(args.output)
+
+    if output.exists() and not args.force:
+        raise SystemExit(f"{output} exists. Use --force to overwrite.")
+
+    from egg import compose
+
     compose(manifest, output)
-    print(f"[build] Created {output}")
+
+    print(f"[build] Building egg from {manifest} -> {output} (placeholder)")
 
 
 def hatch(args: argparse.Namespace) -> None:
