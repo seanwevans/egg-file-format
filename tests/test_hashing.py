@@ -59,7 +59,9 @@ def test_duplicate_basenames(tmp_path: Path) -> None:
 def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
     """Archives containing files not listed in hashes.yaml should fail."""
     output = tmp_path / "demo.egg"
-    compose(Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml", output)
+    compose(
+        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml", output
+    )
 
     # Append an extra file not recorded in hashes.yaml
     with zipfile.ZipFile(output, "a") as zf:
