@@ -125,8 +125,8 @@ roadmap.
 ### Testing
 
 Install dependencies using `pip install .` (or `pip install -e .`) so that
-packages like PyYAML are available. Then run `pytest` to execute the test
-suite. You can also check formatting or style with tools like `ruff` or
+packages like PyYAML are available. Run `ruff .` to lint the code and
+`pytest` to execute the test suite. You can also format your code with
 `black`.
 
 ---
