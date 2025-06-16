@@ -2,7 +2,10 @@
 
 ## Egg Build & Runtime Agents
 
-Egg is built on a modular, agent-based system. Each agent is responsible for a distinct phase in the lifecycle of an egg file:
+Egg is built on a modular, agent-based system. Each agent is responsible for a
+distinct phase in the lifecycle of an egg file.  Only the composer and hashing
+agents are implemented in this prototype.  They live in
+`egg/composer.py` and `egg/hashing.py` and are driven by the CLI.
 
 ### 🛠 Build-Time Agents
 
@@ -37,9 +40,9 @@ Egg is built on a modular, agent-based system. Each agent is responsible for a d
 - Each agent logs its actions for build reproducibility and provenance.
 
 ### 🧰 CLI Modules
-- **egg_cli.py** – lightweight command wrapper exposing `build` and `hatch`
-  commands. The CLI parses the manifest file and invokes the builder
-  orchestration described above.
+- **egg_cli.py** – lightweight command wrapper exposing `build`, `hatch` and
+  `verify` commands. The CLI parses the manifest file and invokes the prototype
+  agents described above.
 
 ---
 

@@ -83,17 +83,107 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     assert f"[hatch] Completed running {egg_path}" in caplog.text
 
 
+def test_hatch_bash(monkeypatch, tmp_path, caplog):
+    """Hatching should invoke bash for bash cells."""
+    script = tmp_path / "hello.sh"
+    script.write_text("echo hi\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: bash
+    source: hello.sh
+"""
+    )
+    egg_path = tmp_path / "demo.egg"
+
+    # build the egg
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "hatch", "--egg", str(egg_path)],
+    )
+    egg_cli.main()
+
+    assert any(cmd[0] == "bash" and cmd[1].endswith("hello.sh") for cmd in calls)
+    assert f"[hatch] Completed running {egg_path}" in caplog.text
+
+
+def test_hatch_unknown_language(monkeypatch, tmp_path):
+    """Unknown cell languages should produce a clear error."""
+    src = tmp_path / "hello.foo"
+    src.write_text("echo hi\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: foo
+    source: hello.foo
+"""
+    )
+    egg_path = tmp_path / "demo.egg"
+    # build
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+
 def test_requires_subcommand(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit) as exc:
         egg_cli.main()
     assert exc.value.code == 2
+    captured = capsys.readouterr()
+    assert "the following arguments are required: command" in captured.err
 
 
 def test_help_without_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py"])
     with pytest.raises(SystemExit):
         egg_cli.main()
+    out = capsys.readouterr().err
+    assert out.startswith("usage:")
 
 
 def test_build_missing_source(monkeypatch, tmp_path):
@@ -305,6 +395,31 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
 
     monkeypatch.setattr(egg_cli, "compose", tamper)
 
+
+def test_preserve_relative_paths(monkeypatch, tmp_path):
+    """Files in subdirectories should retain their paths inside the archive."""
+    a = tmp_path / "a" / "hello.py"
+    b = tmp_path / "b" / "hello.py"
+    a.parent.mkdir()
+    b.parent.mkdir()
+    a.write_text("print('a')\n")
+    b.write_text("print('b')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: a/hello.py
+  - language: python
+    source: b/hello.py
+"""
+    )
+
+    output = tmp_path / "demo.egg"
+
     monkeypatch.setattr(
         sys,
         "argv",
@@ -317,6 +432,12 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
             str(output),
         ],
     )
+
     with pytest.raises(SystemExit) as exc:
         egg_cli.main()
     assert "Hash verification failed" in str(exc.value)
+
+    with zipfile.ZipFile(output) as zf:
+        names = set(zf.namelist())
+    assert "a/hello.py" in names
+    assert "b/hello.py" in names

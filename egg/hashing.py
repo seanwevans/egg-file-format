@@ -23,18 +23,34 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def compute_hashes(files: Iterable[Path]) -> Dict[str, str]:
-    """Compute SHA256 hashes for an iterable of files.
+def compute_hashes(
+    files: Iterable[Path], *, base_dir: Path | None = None
+) -> Dict[str, str]:
+    """Compute SHA256 hashes for ``files``.
 
-    The resulting mapping uses each file's name as the key.
+    Parameters
+    ----------
+    files : Iterable[Path]
+        Files to hash.
+    base_dir : Path | None, optional
+        If given, keys in the returned mapping are paths relative to this
+        directory.  Otherwise each file's basename is used.
 
-    Raises:
-        ValueError: If duplicate basenames are encountered.
+    Returns
+    -------
+    Dict[str, str]
+        Mapping of file path (relative or basename) to SHA256 digest.
+
+    Raises
+    ------
+    ValueError
+        If duplicate keys are encountered.
     """
+
     hashes: Dict[str, str] = {}
     for f in files:
         path = Path(f)
-        name = path.name
+        name = str(path.relative_to(base_dir)) if base_dir else path.name
         if name in hashes:
             raise ValueError(f"Duplicate file basename: {name}")
         hashes[name] = sha256_file(path)

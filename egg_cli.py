@@ -14,6 +14,13 @@ __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
 
+# Mapping of supported languages to their command prefixes.
+LANG_COMMANDS = {
+    "python": [sys.executable],
+    "r": ["Rscript"],
+    "bash": ["bash"],
+}
+
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources."""
@@ -47,13 +54,10 @@ def hatch(args: argparse.Namespace) -> None:
         for cell in manifest.cells:
             src = Path(tmpdir) / cell.source
             lang = cell.language.lower()
-            if lang == "python":
-                cmd = [sys.executable, str(src)]
-            elif lang == "r":
-                cmd = ["Rscript", str(src)]
-            else:
+            base_cmd = LANG_COMMANDS.get(lang)
+            if base_cmd is None:
                 raise SystemExit(f"Unsupported language: {cell.language}")
-            subprocess.run(cmd, check=True)
+            subprocess.run(base_cmd + [str(src)], check=True)
 
     logger.info("[hatch] Completed running %s", egg_path)
 
@@ -93,7 +97,7 @@ def main(argv: list[str] | None = None) -> None:
         description="Egg builder and hatcher CLI",
         parents=[global_parser],
     )
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
 
@@ -149,11 +153,7 @@ def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=level, format="%(message)s")
     logging.getLogger().setLevel(level)
 
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        parser.print_help(sys.stderr)
-        parser.exit(2)
+    args.func(args)
 
 
 if __name__ == "__main__":
