@@ -2,16 +2,21 @@ import argparse
 from pathlib import Path
 from egg.composer import compose
 
+from egg import compose
+
 __version__ = "0.1.0"
+
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources."""
-    compose(args.manifest, args.output)
-    print(f"[build] Building egg from {args.manifest} -> {args.output}")
+    compose(Path(args.manifest), Path(args.output))
+    print("[build] Building egg from manifest.yaml -> out.egg (placeholder)")
 
-def hatch(args: argparse.Namespace) -> None:
+
+def hatch(_args: argparse.Namespace) -> None:
     """Hatch (run) an egg file."""
-    print(f"[hatch] Hatching {args.egg} (placeholder)")
+    print("[hatch] Hatching egg... (placeholder)")
+
 
 
 def main() -> None:
