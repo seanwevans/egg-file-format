@@ -112,3 +112,19 @@ cells:
     )
     with pytest.raises(ValueError):
         load_manifest(path)
+
+
+def test_unknown_root_field(tmp_path: Path) -> None:
+    path = tmp_path / "extra.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: hello.py
+extra: value
+"""
+    )
+    with pytest.raises(ValueError):
+        load_manifest(path)
