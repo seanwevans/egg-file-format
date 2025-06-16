@@ -1,0 +1,8 @@
+PyYAML
+pytest
+pre-commit
+ruff
+black
+flake8
+pylint
+coverage
