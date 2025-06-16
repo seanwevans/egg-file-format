@@ -43,9 +43,15 @@ def load_manifest(path: Path | str) -> Manifest:
     if not isinstance(data, dict):
         raise ValueError("Manifest root must be a mapping")
 
-    for field in ("name", "description", "cells"):
+    required_fields = {"name", "description", "cells"}
+    for field in required_fields:
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
+
+    unknown_fields = set(data) - required_fields
+    if unknown_fields:
+        unknown = ", ".join(sorted(unknown_fields))
+        raise ValueError(f"Unknown field(s): {unknown}")
 
     # Validate simple scalar fields
     if not isinstance(data["name"], str):
