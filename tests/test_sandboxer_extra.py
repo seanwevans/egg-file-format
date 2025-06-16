@@ -41,12 +41,15 @@ def test_prepare_images_uses_tempdir(monkeypatch, tmp_path: Path):
     images = prepare_images(manifest, None)
     assert images["python"].parent == tmp_path / "tmp"
 
+
 def test_prepare_images_skips_duplicate(tmp_path: Path):
     manifest = Manifest(
         name="ex",
         description="d",
-        cells=[Cell(language="python", source="a.py"), Cell(language="python", source="b.py")],
+        cells=[
+            Cell(language="python", source="a.py"),
+            Cell(language="python", source="b.py"),
+        ],
     )
     images = prepare_images(manifest, tmp_path)
     assert list(images.keys()) == ["python"]
-

@@ -72,7 +72,9 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
             raise ValueError(f"Dependency path escapes manifest directory: {dep}")
         if not abs_path.is_file():
             if ":" in dep:  # pragma: no cover
-                logger.debug("[runtime_fetcher] Skipping remote dependency %s", dep)  # pragma: no cover
+                logger.debug(
+                    "[runtime_fetcher] Skipping remote dependency %s", dep
+                )  # pragma: no cover
                 continue
             raise FileNotFoundError(f"Dependency file not found: {abs_path}")
         resolved.append(abs_path)
