@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Data structures and helpers for reading ``manifest.yaml`` files."""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -16,12 +18,16 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 
 @dataclass
 class Cell:
+    """A single code cell entry in the manifest."""
+
     language: str
     source: str
 
 
 @dataclass
 class Manifest:
+    """Top-level manifest describing the notebook cells."""
+
     name: str
     description: str
     cells: List[Cell]
