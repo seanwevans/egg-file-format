@@ -41,6 +41,16 @@ This roadmap sketches the planned development of the **egg file format** and its
 - Plug‑in system for custom agents and alternative runtimes.
 - Integration with popular notebook UIs and hosting platforms.
 
+### v2.5 – Collaboration & Cloud
+- Real-time collaborative editing and comment threads.
+- Hosted block registry for sharing runtimes and datasets.
+- Cloud hatcher allowing eggs to run directly in the browser.
+
+### v3.0 – Standardization
+- Publish the egg specification through a standards body.
+- Provide reference runtimes in Go and Rust.
+- Guarantee long-term compatibility for 2.x archives.
+
 ## Longer Term
 
-The project aims to become the standard portable notebook format for science and analytics. Future work includes deep security hardening, a public block registry, and collaborative features built on top of the core egg specification.
+The project aims to become the standard portable notebook format for science and analytics. Beyond v3.0 we envision deep security hardening, a vibrant block registry, and seamless collaboration across major notebook platforms.
