@@ -23,6 +23,9 @@ def chunk(path: Path | str, *, chunk_size: int = 1_048_576) -> List[Dict[str, in
         order they appear in the file.
     """
 
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+
     file_path = Path(path)
     metadata: List[Dict[str, int]] = []
     offset = 0
