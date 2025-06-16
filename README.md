@@ -51,7 +51,8 @@ Use `egg <command> -h` to see all options. Runtime commands can be overridden wi
 ### Testing
 
 ```bash
-pip install .       # installs PyYAML and the CLI
+pip install .       # installs the CLI
+pip install -r requirements-dev.txt
 pre-commit run --all-files
 ```
 This formats code, lints with flake8 and pylint, runs tests with coverage,
