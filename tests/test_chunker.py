@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-import pytest # noqa: E402
+import pytest  # noqa: E402
 from egg.chunker import chunk  # noqa: E402
 
 
