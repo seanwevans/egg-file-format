@@ -44,6 +44,31 @@ def test_build(monkeypatch, tmp_path, caplog):
     assert "hello.R" in names
 
 
+def test_build_force_overwrite(monkeypatch, tmp_path):
+    """Building should require --force to overwrite existing output."""
+    output = tmp_path / "demo.egg"
+    base = [
+        "egg_cli.py",
+        "build",
+        "--manifest",
+        os.path.join("examples", "manifest.yaml"),
+        "--output",
+        str(output),
+    ]
+
+    monkeypatch.setattr(sys, "argv", base)
+    egg_cli.main()
+    assert output.is_file()
+
+    monkeypatch.setattr(sys, "argv", base)
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+    monkeypatch.setattr(sys, "argv", base + ["--force"])
+    egg_cli.main()
+    assert output.is_file()
+
+
 def test_hatch(monkeypatch, tmp_path, caplog):
     egg_path = tmp_path / "demo.egg"
 
