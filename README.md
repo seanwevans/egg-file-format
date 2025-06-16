@@ -1,11 +1,7 @@
 # 🥚 egg file format
 
-[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](https://img.shields.io)
-<<<<<<< codex/harden-fetch_runtime_blocks-and-_download_container-for-path
-[![Pylint](https://img.shields.io/badge/pylint-9.65%2F10-brightgreen)](https://pylint.pycqa.org/)
-=======
+[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)](https://img.shields.io)
 [![Pylint](https://img.shields.io/badge/pylint-9.62%2F10-brightgreen)](https://pylint.pycqa.org/)
->>>>>>> main
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
