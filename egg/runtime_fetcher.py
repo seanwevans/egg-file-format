@@ -46,7 +46,11 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
 
     manifest_path = Path(manifest_path)
     with open(manifest_path, "r", encoding="utf-8") as f:
-        manifest = yaml.safe_load(f) or {}
+        manifest = yaml.safe_load(f)
+    if manifest is None:
+        manifest = {}
+    if not isinstance(manifest, dict):
+        raise ValueError("Manifest root must be a mapping")
 
     deps = manifest.get("dependencies", [])
     if deps is None:
