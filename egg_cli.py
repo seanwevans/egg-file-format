@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+import platform
 from pathlib import Path
 
 from egg.composer import compose
@@ -22,6 +23,16 @@ from egg.utils import get_lang_command, load_plugins
 __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_PLATFORMS = {"Linux", "Darwin", "Windows"}
+
+
+def check_platform() -> None:
+    """Exit if running on an unsupported platform."""
+
+    current = platform.system()
+    if current not in SUPPORTED_PLATFORMS:
+        raise SystemExit(f"Unsupported platform: {current}")
 
 
 def build(args: argparse.Namespace) -> None:
@@ -133,6 +144,7 @@ def main(argv: list[str] | None = None) -> None:
     if argv is None:  # pragma: no cover - convenience for __main__
         argv = sys.argv[1:]
 
+    check_platform()
     load_plugins()
 
     global_parser = argparse.ArgumentParser(add_help=False)

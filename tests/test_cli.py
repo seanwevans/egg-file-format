@@ -8,6 +8,8 @@ import logging
 import subprocess
 import shutil
 from pathlib import Path
+import platform
+import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
@@ -98,7 +100,15 @@ def test_build_force_overwrite(monkeypatch, tmp_path):
     assert output.is_file()
 
 
-def test_hatch(monkeypatch, tmp_path, caplog):
+@pytest.mark.parametrize(
+    "os_name,conf_file",
+    [
+        ("Linux", "microvm.conf"),
+        ("Darwin", "container.conf"),
+        ("Windows", "container.conf"),
+    ],
+)
+def test_hatch(monkeypatch, tmp_path, caplog, os_name, conf_file):
     egg_path = tmp_path / "demo.egg"
 
     # build an egg first
@@ -123,12 +133,15 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     def fake_run(cmd, check=True):
         calls.append(cmd)
 
-    from egg import sandboxer
+    monkeypatch.setattr(platform, "system", lambda: os_name)
+    import egg.sandboxer as sandboxer
+
+    importlib.reload(sandboxer)
 
     def fake_prepare(manifest, dest):
         images = sandboxer.prepare_images(manifest, dest)
         sb_calls.append(sorted(images.keys()))
-        sb_configs.append(all((p / "microvm.conf").is_file() for p in images.values()))
+        sb_configs.append(all((p / conf_file).is_file() for p in images.values()))
         return images
 
     monkeypatch.setattr(subprocess, "run", fake_run)

@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from egg.sandboxer import (
     build_microvm_image,
     launch_microvm,
+    build_container_image,
+    launch_container,
     prepare_images,
 )  # noqa: E402
 from egg.manifest import Manifest, Cell  # noqa: E402
@@ -32,6 +34,26 @@ def test_launch_microvm(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(subprocess, "run", fake_run)
     result = launch_microvm(tmp_path)
     assert called and "firecracker" in called[0][0]
+    assert result.returncode == 0
+
+
+def test_build_container_image(tmp_path: Path) -> None:
+    build_container_image("python", tmp_path)
+    assert (tmp_path / "container.json").is_file()
+    assert (tmp_path / "container.conf").read_text().startswith("language: python")
+
+
+def test_launch_container(monkeypatch, tmp_path: Path):
+    (tmp_path / "container.json").write_text('{"language": "python"}')
+    called = []
+
+    def fake_run(cmd, check=True):
+        called.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = launch_container(tmp_path)
+    assert called and "docker" in called[0][0]
     assert result.returncode == 0
 
 
