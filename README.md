@@ -41,6 +41,7 @@ You can start experimenting with a minimal two-language notebook using
 - See [FORMAT.md](FORMAT.md) for the egg file format specification.
 - See [SECURITY.md](SECURITY.md) for sandboxing and threat model.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to join the hatch!
+- See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community guidelines.
 
 ## Installation
 
@@ -128,6 +129,10 @@ Install dependencies using `pip install .` (or `pip install -e .`) so that
 packages like PyYAML are available. Run `ruff .` to lint the code and
 `pytest` to execute the test suite. You can also format your code with
 `black`.
+
+## Citation
+
+If you use this project in your research, please cite it using the metadata in [CITATION.cff](CITATION.cff).
 
 ---
 
