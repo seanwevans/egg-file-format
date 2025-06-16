@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it using the following metadata."
+title: "egg file format"
+version: "0.1.0"
+doi: 10.0000/placeholder-doi
+authors:
+  - name: "Egg contributors"
