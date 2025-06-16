@@ -10,8 +10,7 @@ readme = "README.md"
 description = "CLI tools for the egg file format"
 requires-python = ">=3.8"
 dependencies = ["PyYAML>=6"]
-license = { text = "MIT" }
-classifiers = ["License :: OSI Approved :: MIT License"]
+license = "MIT"
 
 [project.scripts]
 egg = "egg_cli:main"
