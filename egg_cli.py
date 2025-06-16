@@ -2,16 +2,40 @@ import argparse
 
 
 def build(_args: argparse.Namespace) -> None:
-    """Placeholder for building an egg file."""
+    """Build an egg file from sources.
+
+    Args:
+        _args: Parsed command line arguments for the ``build`` subcommand. The
+            current placeholder does not expect any specific options.
+
+    Returns:
+        None. Prints a placeholder message to indicate the command ran.
+    """
     print("[build] Building egg... (placeholder)")
 
 
 def hatch(_args: argparse.Namespace) -> None:
-    """Placeholder for hatching an egg file."""
+    """Hatch (run) an egg file.
+
+    Args:
+        _args: Parsed command line arguments for the ``hatch`` subcommand. This
+            placeholder function ignores additional options.
+
+    Returns:
+        None. Prints a placeholder message indicating an egg would hatch.
+    """
     print("[hatch] Hatching egg... (placeholder)")
 
 
 def main() -> None:
+    """Entry point for the ``egg`` command line interface.
+
+    Parses arguments and dispatches to the appropriate subcommand. The function
+    exits after running the selected command or printing help information.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
     subparsers = parser.add_subparsers(dest="command")
 
