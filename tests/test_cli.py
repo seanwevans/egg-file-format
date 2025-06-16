@@ -299,6 +299,36 @@ def test_build_missing_manifest(monkeypatch, tmp_path):
     assert str(manifest) in str(exc.value)
 
 
+def test_build_rejects_unsafe_path(monkeypatch, tmp_path):
+    manifest_dir = tmp_path / "sub"
+    manifest_dir.mkdir()
+    manifest = manifest_dir / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: ../evil.py
+"""
+    )
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(output),
+        ],
+    )
+    with pytest.raises(ValueError):
+        egg_cli.main()
+
+
 def test_version_option(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "--version"])
     with pytest.raises(SystemExit):
