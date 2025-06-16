@@ -40,11 +40,23 @@ def _get_registry_url() -> str | None:
 
 
 def _download_container(image: str, dest: Path, base_url: str) -> Path:
-    """Download ``image`` from ``base_url`` to ``dest``."""
+    """Download ``image`` from ``base_url`` to ``dest``.
+
+    A ``ValueError`` is raised if ``dest`` resolves outside its parent
+    directory.  This prevents a malicious symlink from redirecting the
+    download to an arbitrary location.
+    """
+
+    manifest_dir = dest.parent.resolve()
+    dest = dest.resolve(strict=False)
+    if not _is_relative_to(dest, manifest_dir):
+        raise ValueError(f"Download path escapes manifest directory: {dest}")
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.is_file():
         logger.debug("[runtime_fetcher] using cached %s", dest)
         return dest
+
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
     with urlopen(url) as resp, open(dest, "wb") as fh:
@@ -100,8 +112,15 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
         if not isinstance(dep, str):
             raise ValueError("dependency entries must be strings")
         if ":" in dep:
+            if "/" in dep or "\\" in dep:
+                raise ValueError(f"Invalid container image name: {dep}")
             if registry:
-                dest = manifest_dir / f"{dep.replace(':', '_')}.img"
+                safe = dep.replace("/", "_").replace("\\", "_").replace(":", "_")
+                dest = (manifest_dir / f"{safe}.img").resolve(strict=False)
+                if not _is_relative_to(dest, manifest_dir):
+                    raise ValueError(
+                        f"Dependency path escapes manifest directory: {dep}"
+                    )
                 resolved.append(_download_container(dep, dest, registry))
             else:
                 resolved.append(dep)
