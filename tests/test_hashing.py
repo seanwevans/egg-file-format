@@ -1,6 +1,8 @@
 import hashlib
 from pathlib import Path
 
+import pytest
+
 from egg.hashing import sha256_file, compute_hashes, write_hashes_file, load_hashes, verify_hashes
 
 
@@ -30,3 +32,16 @@ def test_compute_write_load_verify(tmp_path: Path) -> None:
     # corrupt a file and verification should fail
     b.write_text("X")
     assert not verify_hashes(tmp_path, loaded)
+
+
+def test_duplicate_basenames(tmp_path: Path) -> None:
+    one = tmp_path / "one"
+    two = tmp_path / "two"
+    one.mkdir()
+    two.mkdir()
+    f1 = one / "dup.txt"
+    f2 = two / "dup.txt"
+    f1.write_text("A")
+    f2.write_text("B")
+    with pytest.raises(ValueError):
+        compute_hashes([f1, f2])

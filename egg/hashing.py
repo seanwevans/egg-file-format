@@ -25,8 +25,18 @@ def compute_hashes(files: Iterable[Path]) -> Dict[str, str]:
     """Compute SHA256 hashes for an iterable of files.
 
     The resulting mapping uses each file's name as the key.
+
+    Raises:
+        ValueError: If duplicate basenames are encountered.
     """
-    return {Path(f).name: sha256_file(Path(f)) for f in files}
+    hashes: Dict[str, str] = {}
+    for f in files:
+        path = Path(f)
+        name = path.name
+        if name in hashes:
+            raise ValueError(f"Duplicate file basename: {name}")
+        hashes[name] = sha256_file(path)
+    return hashes
 
 
 def write_hashes_file(hashes: Dict[str, str], path: Path) -> None:
