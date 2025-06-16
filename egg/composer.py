@@ -39,6 +39,7 @@ def compose(
     """
     manifest_path = Path(manifest_path)
     output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     manifest = load_manifest(manifest_path)
 
