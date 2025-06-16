@@ -9,6 +9,20 @@ __version__ = "0.1.0"
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources."""
+    manifest = Path(args.manifest)
+    output = Path(args.output)
+
+    if output.exists() and not args.force:
+        raise FileExistsError(f"{output} already exists. Use --force to overwrite.")
+
+    compose(manifest, output)
+    print(f"[build] Created {output}")
+
+
+def hatch(args: argparse.Namespace) -> None:
+    """Hatch (run) an egg file."""
+    print(f"[hatch] Hatching {args.egg} (placeholder)")
+    
     compose(Path(args.manifest), Path(args.output))
     print("[build] Building egg from manifest.yaml -> out.egg (placeholder)")
 
@@ -32,9 +46,25 @@ def main() -> None:
     )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
-    parser_build.add_argument("-m", "--manifest", default="manifest.yaml", help="Path to manifest YAML file")
-    parser_build.add_argument("-o", "--output", default="out.egg", help="Path for output egg file")
-    parser_build.add_argument("-f", "--force", action="store_true", help="Overwrite output if it exists")
+
+    parser_build.add_argument(
+        "-m",
+        "--manifest",
+        default="manifest.yaml",
+        help="Path to manifest YAML file",
+    )
+    parser_build.add_argument(
+        "-o",
+        "--output",
+        default="out.egg",
+        help="Path for output egg file",
+    )
+    parser_build.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite output if it exists",
+    )
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")

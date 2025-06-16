@@ -25,6 +25,13 @@ def test_build(monkeypatch, tmp_path, capsys):
     )
     egg_cli.main()
 
+    captured = capsys.readouterr()
+    assert (
+        "[build] Created"
+        in captured.out
+    )
+
+
     assert output.is_file()
     with zipfile.ZipFile(output) as zf:
         names = zf.namelist()
