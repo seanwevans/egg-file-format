@@ -75,7 +75,9 @@ def test_hatch(monkeypatch, tmp_path, caplog):
     )
     egg_cli.main()
 
-    assert any(cmd[0] == sys.executable and cmd[1].endswith("hello.py") for cmd in calls)
+    assert any(
+        cmd[0] == sys.executable and cmd[1].endswith("hello.py") for cmd in calls
+    )
     assert any(cmd[0] == "Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
     assert f"[hatch] Completed running {egg_path}" in caplog.text
 
