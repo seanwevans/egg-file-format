@@ -24,6 +24,6 @@ def test_prepare_images_writes_config(tmp_path: Path) -> None:
     assert set(images.keys()) == {"python", "r"}
     for lang, path in images.items():
         assert path.is_dir()
-        config = path / "microvm.json"
+        config = path / "microvm.conf"
         assert config.is_file()
         assert config.read_text()
