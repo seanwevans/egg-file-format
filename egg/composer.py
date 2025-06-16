@@ -8,7 +8,12 @@ import zipfile
 from pathlib import Path
 from typing import Iterable, List
 
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError as exc:  # pragma: no cover - import guard
+    raise ModuleNotFoundError(
+        "PyYAML is required to use egg composer. Install with 'pip install PyYAML'"
+    ) from exc
 
 from .hashing import compute_hashes, write_hashes_file
 

@@ -4,7 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError as exc:  # pragma: no cover - import guard
+    raise ModuleNotFoundError(
+        "PyYAML is required to load egg manifests. Install with 'pip install PyYAML'"
+    ) from exc
 
 
 @dataclass
