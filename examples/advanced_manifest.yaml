@@ -1,0 +1,16 @@
+name: "Advanced Notebook"
+description: "Example demonstrating dependencies, permissions, and mixed languages"
+dependencies:
+  - python:3.11
+  - r:4.3
+  - bash:5
+permissions:
+  network: true
+  filesystem: read-write
+cells:
+  - language: python
+    source: advanced.py
+  - language: bash
+    source: say.sh
+  - language: r
+    source: advanced.R
