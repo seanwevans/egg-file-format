@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 import logging
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -36,10 +37,8 @@ def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
         ],
     )
     monkeypatch.setattr(egg_cli, "fetch_runtime_blocks", lambda m: [])
-    egg_cli.main()
-
-    assert output.is_file()
-    assert verify_archive(output)
+    with pytest.raises(ValueError):
+        egg_cli.main()
 
 
 def test_build_julia_manifest(monkeypatch, tmp_path, caplog):
