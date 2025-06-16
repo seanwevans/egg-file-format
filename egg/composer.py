@@ -52,6 +52,10 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
 
         # copy referenced sources
         for src in _collect_sources(manifest, manifest_path.parent):
+            if not src.is_file():
+                raise FileNotFoundError(
+                    f"Source file not found: {src} (referenced from {manifest_path})"
+                )
             dest = tmpdir_path / src.name
             shutil.copy2(src, dest)
             copied.append(dest)
