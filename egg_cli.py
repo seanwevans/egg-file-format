@@ -1,34 +1,22 @@
 import argparse
-import os
 
-import yaml
+from pathlib import Path
 
-__version__ = "0.1.0"
-
-
-def parse_manifest(path: str) -> list[str]:
-    """Parse a manifest file and return resolved source paths."""
-    with open(path, "r", encoding="utf-8") as f:
-        manifest = yaml.safe_load(f)
-
-    base_dir = os.path.dirname(os.path.abspath(path))
-    resolved = []
-    for cell in manifest.get("cells", []):
-        source = cell.get("source")
-        if source:
-            resolved.append(os.path.abspath(os.path.join(base_dir, source)))
-    return resolved
+from egg import compose
 
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
 
-    Args:
-        args: Parsed command line arguments for the ``build`` subcommand.
-
-    Returns:
-        None. Prints a placeholder message to indicate the command ran.
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments with ``manifest`` and ``output`` attributes.
     """
+
+    compose(Path(args.manifest), Path(args.output))
+    print(f"[build] Egg written to {args.output}")
+
     resolved = []
     if args.manifest:
         resolved = parse_manifest(args.manifest)
@@ -36,6 +24,7 @@ def build(args: argparse.Namespace) -> None:
     print("[build] Building egg... (placeholder)")
     for path in resolved:
         print(path)
+
 
 
 def hatch(_args: argparse.Namespace) -> None:
@@ -74,6 +63,15 @@ def main() -> None:
     parser_build = subparsers.add_parser("build", help="Build an egg file")
     parser_build.add_argument(
         "--manifest",
+
+        required=True,
+        help="Path to manifest.yaml describing notebook contents",
+    )
+    parser_build.add_argument(
+        "--output",
+        required=True,
+        help="Destination .egg archive path",
+
         type=str,
         help="Path to the manifest YAML",
     )
@@ -81,6 +79,7 @@ def main() -> None:
         "--output",
         type=str,
         help="Output egg file path",
+
     )
     parser_build.set_defaults(func=build)
 

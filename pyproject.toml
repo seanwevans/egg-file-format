@@ -9,6 +9,7 @@ authors = [{ name = "egg contributors" }]
 readme = "README.md"
 description = "CLI tools for the egg file format"
 requires-python = ">=3.8"
+dependencies = ["PyYAML>=6"]
 license = { text = "MIT" }
 classifiers = ["License :: OSI Approved :: MIT License"]
 
@@ -16,4 +17,5 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 egg = "egg_cli:main"
 
 [tool.setuptools]
+packages = ["egg"]
 py-modules = ["egg_cli"]

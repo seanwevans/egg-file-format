@@ -4,15 +4,14 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+import zipfile
+
 import egg_cli  # noqa: E402
 import pytest
 
-def test_build(monkeypatch, capsys, tmp_path):
-    manifest = tmp_path / "manifest.yaml"
-    (tmp_path / "script.py").write_text("print('hi')")
-    manifest.write_text(
-        "name: t\ncells:\n- language: python\n  source: script.py\n"
-    )
+
+def test_build(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
     monkeypatch.setattr(
         sys,
         "argv",
@@ -20,15 +19,19 @@ def test_build(monkeypatch, capsys, tmp_path):
             "egg_cli.py",
             "build",
             "--manifest",
-            str(manifest),
+            os.path.join("examples", "manifest.yaml"),
             "--output",
-            "out.egg",
+            str(output),
         ],
     )
     egg_cli.main()
-    captured = capsys.readouterr()
-    assert "[build] Building egg... (placeholder)" in captured.out
-    assert str((tmp_path / "script.py").resolve()) in captured.out
+
+    assert output.is_file()
+    with zipfile.ZipFile(output) as zf:
+        names = zf.namelist()
+    assert "hello.py" in names
+    assert "hello.R" in names
+
 
 def test_hatch(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch"])
