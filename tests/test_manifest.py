@@ -195,3 +195,54 @@ cells:
     )
     with pytest.raises(ValueError, match="Cell #0 must be a mapping"):
         load_manifest(path)
+
+
+def test_permissions_mapping(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+permissions:
+  network: true
+  filesystem: false
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    manifest = load_manifest(path)
+    assert manifest.permissions == {"network": True, "filesystem": False}
+
+
+def test_permissions_not_mapping(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+permissions: []
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError, match="'permissions' must be a mapping"):
+        load_manifest(path)
+
+
+def test_permission_value_must_be_bool(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+permissions:
+  network: "yes"
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError, match="Permission 'network' must be a boolean"):
+        load_manifest(path)
