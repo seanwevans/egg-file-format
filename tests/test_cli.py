@@ -194,8 +194,12 @@ def test_hatch_custom_commands(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
     egg_cli.main()
 
-    assert any(cmd[0] == "/custom/python" and cmd[1].endswith("hello.py") for cmd in calls)
-    assert any(cmd[0] == "/custom/Rscript" and cmd[1].endswith("hello.R") for cmd in calls)
+    assert any(
+        cmd[0] == "/custom/python" and cmd[1].endswith("hello.py") for cmd in calls
+    )
+    assert any(
+        cmd[0] == "/custom/Rscript" and cmd[1].endswith("hello.R") for cmd in calls
+    )
 
 
 def test_hatch_unknown_language(monkeypatch, tmp_path):
