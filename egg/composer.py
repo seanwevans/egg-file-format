@@ -18,12 +18,12 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 from .hashing import compute_hashes, write_hashes_file
 
 
-def _collect_sources(manifest: dict, base_dir: Path) -> Iterable[Path]:
-    """Yield file paths referenced in the manifest."""
+def _collect_sources(manifest: dict) -> Iterable[Path]:
+    """Yield relative paths referenced in the manifest."""
     for cell in manifest.get("cells", []):
         source = cell.get("source")
         if source:
-            yield base_dir / source
+            yield Path(source)
 
 
 def compose(manifest_path: Path | str, output_path: Path | str) -> None:
@@ -51,24 +51,27 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
         copied.append(manifest_copy)
 
         # copy referenced sources
-        for src in _collect_sources(manifest, manifest_path.parent):
+        for rel_src in _collect_sources(manifest):
+            src = manifest_path.parent / rel_src
             if not src.is_file():
                 raise FileNotFoundError(
                     f"Source file not found: {src} (referenced from {manifest_path})"
                 )
-            dest = tmpdir_path / src.name
+            dest = tmpdir_path / rel_src
+            dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
             copied.append(dest)
 
         # write hashes file
-        hashes = compute_hashes(copied)
+        hashes = compute_hashes(copied, base_dir=tmpdir_path)
         hashes_path = tmpdir_path / "hashes.yaml"
         write_hashes_file(hashes, hashes_path)
         copied.append(hashes_path)
 
         with zipfile.ZipFile(output_path, "w") as zf:
-            for file in sorted(copied, key=lambda p: p.name):
-                zi = zipfile.ZipInfo(file.name)
+            for file in sorted(copied, key=lambda p: str(p.relative_to(tmpdir_path))):
+                rel = file.relative_to(tmpdir_path)
+                zi = zipfile.ZipInfo(rel.as_posix())
                 zi.date_time = (1980, 1, 1, 0, 0, 0)
                 zi.compress_type = zipfile.ZIP_DEFLATED
                 with open(file, "rb") as f:
