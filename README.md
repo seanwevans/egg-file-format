@@ -149,11 +149,16 @@ roadmap.
 
 ### Testing
 
-Install dependencies using `pip install .` (or `pip install -e .`) so that
-packages like PyYAML are available. Then run `pytest` to execute the test
-suite. To check coverage, install `pytest-cov` and run
-`pytest --cov=egg --cov=egg_cli`. You can also check formatting or style with
-tools like `ruff` or `black`.
+PyYAML must be installed before running the test suite. The easiest way is to
+install the project itself which pulls in PyYAML as a dependency:
+
+```bash
+pip install .    # or `pip install -e .`
+```
+
+After installation run `pytest` to execute the tests. To check coverage, install
+`pytest-cov` and run `pytest --cov=egg --cov=egg_cli`. You can also check
+formatting or style with tools like `ruff` or `black`.
 
 ## Citation
 
