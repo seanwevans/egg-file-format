@@ -59,6 +59,9 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path]:
     for dep in deps:
         if not isinstance(dep, str):
             raise ValueError("dependency entries must be strings")
+        if ":" in dep:
+            logger.debug("[runtime_fetcher] Skipping remote dependency %s", dep)
+            continue
         p = Path(dep)
         if p.is_absolute():
             raise ValueError(f"Absolute dependency paths are not allowed: {dep}")
