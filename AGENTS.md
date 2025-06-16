@@ -1,50 +1,73 @@
 # AGENTS.md
 
-## Egg Build & Runtime Agents
+This guide explains the role of each agent in the Egg build system and how they
+work together.  Agents are small Python modules located in the `egg/` package.
+They each handle a single phase of the egg lifecycle and can be combined via the
+CLI wrapper found in `egg_cli.py`.
 
-Egg is built on a modular, agent-based system. Each agent is responsible for a
-distinct phase in the lifecycle of an egg file.  The prototype includes several
-lightweight agents wired into `egg_cli.py`:
+## Directory Layout
 
-- `egg/composer.py` – composer
-- `egg/runtime_fetcher.py` – runtime fetcher
-- `egg/sandboxer.py` – sandboxer
-- `egg/precompute.py` – precompute helper
-- `egg/chunker.py` – chunker
-- `egg/hashing.py` – hashing and signing
+- `egg/composer.py` – assembles sources and manifests
+- `egg/runtime_fetcher.py` – gathers runtime blobs referenced in a manifest
+- `egg/sandboxer.py` – prepares micro‑VM images
+- `egg/precompute.py` – optional helper that executes cells during build
+- `egg/chunker.py` – deterministic file chunking utility
+- `egg/hashing.py` – hashing and signing helpers
 
-### 🛠 Build-Time Agents
+All of these agents are orchestrated by the CLI. Additional examples and helper
+scripts live in the `scripts/` and `examples/` directories.
 
-- **Composer Agent** – assembles sources and manifest. Invoked by `egg build`.
-- **Runtime Fetcher** – collects runtime blocks referenced in the manifest. Automatically run during `egg build`.
-- **Precompute Agent** – executes cells and stores outputs when `egg build --precompute` is used.
-- **Hasher & Signer** – hashes all blobs and signs the manifest as part of `egg build`.
-- **Chunker** – splits files into deterministic chunks; currently a standalone helper not directly called by the CLI.
-- **Sandboxer** – prepares micro‑VM images. Triggered by `egg hatch` unless `--no-sandbox`.
-- **Test Agent** – dry-runs the built egg to guarantee hatch-ability.
+## 🛠 Build‑Time Agents
 
-### 🐣 Runtime Agents
+The following agents run when `egg build` is executed:
 
-- **Hatcher**
-  - Instantiates micro-VMs and launches runtimes/cells as needed.
-- **UI Loader**
-  - Loads trunk/layer 1 for instant UI; progressively loads lower layers/big data.
-- **Security Monitor**
-  - Enforces runtime limits and sandbox policy.
-- **Output Streamer**
-  - Streams code output, plots, and previews into the notebook UI.
+- **Composer** – gathers source files and writes out the manifest
+- **Runtime Fetcher** – collects external runtimes so they are embedded in the egg
+- **Precompute** – executes cells when `egg build --precompute` is used
+- **Hasher & Signer** – computes hashes for all blobs and signs the manifest
+- **Chunker** – splits files into stable chunks to deduplicate content
+- **Sandboxer** – constructs micro‑VM images (also used by `egg hatch`)
+- **Test Agent** – dry‑runs a build to confirm the resulting egg hatches
 
-### 🚦 Agent-Orchestration
-- Agents are coordinated by a build pipeline manager (Egg Builder).
-- Each agent logs its actions for build reproducibility and provenance.
+Build‑time agents can log verbose output for reproducibility and debugging. All
+agents are designed to be composable and self‑contained.
 
-### 🧰 CLI Modules
-- **egg_cli.py** – command wrapper exposing `build`, `hatch` and `verify`.
-  `egg build` calls the composer, runtime fetcher, precompute (optional),
-  hasher and chunker helpers. `egg hatch` invokes the sandboxer to prepare
-  micro‑VM images before running cells. Verification uses the hashing module.
+## 🐣 Runtime Agents
+
+When an egg is hatched the runtime agents take over:
+
+- **Hatcher** – launches micro‑VMs and executes cells on demand
+- **UI Loader** – loads the UI rapidly and fetches lower layers as needed
+- **Security Monitor** – enforces sandbox policies and resource limits
+- **Output Streamer** – streams cell output back into the notebook UI
+
+Runtime agents aim to keep startup latency low while maintaining security.
+
+## 🚦 Agent Orchestration
+
+Agents are coordinated by a simple pipeline manager built into the CLI. Each
+agent publishes log events that can be replayed to reproduce the build process.
+The modular design also means new agents can be added easily without modifying
+existing ones.
+
+### Creating New Agents
+
+1. Place the new module in the `egg/` package and document the public API.
+2. Keep the interface small—each agent should focus on a single task.
+3. Update this file and any examples to reflect the new functionality.
+
+### Developer Workflow
+
+Run the project's automated checks before submitting a pull request:
+
+```bash
+pip install .
+pre-commit run --all-files
+```
+
+These commands format the code, perform static analysis and run the test suite.
+Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details on style guidelines.
 
 ---
 
-See [FORMAT.md](FORMAT.md) for the file structure agents produce.
-
+See [FORMAT.md](FORMAT.md) for the file structure produced by these agents.
