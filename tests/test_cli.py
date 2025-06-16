@@ -10,7 +10,7 @@ import egg_cli  # noqa: E402
 import pytest
 
 
-def test_build(monkeypatch, tmp_path):
+def test_build(monkeypatch, tmp_path, capsys):
     output = tmp_path / "demo.egg"
     monkeypatch.setattr(
         sys,
@@ -27,10 +27,11 @@ def test_build(monkeypatch, tmp_path):
     egg_cli.main()
 
     captured = capsys.readouterr()
-    assert (
-        "[build] Building egg from manifest.yaml -> out.egg (placeholder)"
-        in captured.out
+    expected = (
+        f"[build] Building egg from {os.path.join('examples', 'manifest.yaml')} "
+        f"-> {output} (placeholder)"
     )
+    assert expected in captured.out
 
 
     assert output.is_file()
@@ -61,7 +62,7 @@ def test_help_without_subcommand(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         egg_cli.main()
     captured = capsys.readouterr()
-    assert "usage:" in captured.out
+    assert "usage:" in captured.err
 
 def test_version_option(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "--version"])

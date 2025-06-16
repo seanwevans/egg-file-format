@@ -2,14 +2,8 @@ import argparse
 
 from pathlib import Path
 
+__version__ = "0.1.0"
 
-def build(args: argparse.Namespace) -> None:
-    """Build an egg file from sources.
-
-    Args:
-        args: Parsed command line arguments for the ``build`` subcommand.
-            ``args.manifest`` points to the manifest YAML file and
-            ``args.output`` specifies the resulting egg path.
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
@@ -20,7 +14,17 @@ def build(args: argparse.Namespace) -> None:
         Parsed CLI arguments with ``manifest`` and ``output`` attributes.
     """
 
-    print(f"[build] Building egg from {args.manifest} -> {args.output} (placeholder)")
+    manifest = Path(args.manifest)
+    output = Path(args.output)
+
+    if output.exists() and not args.force:
+        raise SystemExit(f"{output} exists. Use --force to overwrite.")
+
+    from egg import compose
+
+    compose(manifest, output)
+
+    print(f"[build] Building egg from {manifest} -> {output} (placeholder)")
 
 def hatch(args: argparse.Namespace) -> None:
     """Hatch (run) an egg file.
