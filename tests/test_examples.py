@@ -8,7 +8,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
 from egg.hashing import verify_archive  # noqa: E402
 
-EXAMPLE_ADV_MANIFEST = Path(__file__).resolve().parent.parent / "examples" / "advanced_manifest.yaml"
+EXAMPLE_ADV_MANIFEST = (
+    Path(__file__).resolve().parent.parent / "examples" / "advanced_manifest.yaml"
+)
 
 
 def test_build_advanced_manifest(monkeypatch, tmp_path, caplog):
