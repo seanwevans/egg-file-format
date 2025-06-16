@@ -1,19 +1,41 @@
 import argparse
+import os
+
+import yaml
 
 __version__ = "0.1.0"
 
 
-def build(_args: argparse.Namespace) -> None:
+def parse_manifest(path: str) -> list[str]:
+    """Parse a manifest file and return resolved source paths."""
+    with open(path, "r", encoding="utf-8") as f:
+        manifest = yaml.safe_load(f)
+
+    base_dir = os.path.dirname(os.path.abspath(path))
+    resolved = []
+    for cell in manifest.get("cells", []):
+        source = cell.get("source")
+        if source:
+            resolved.append(os.path.abspath(os.path.join(base_dir, source)))
+    return resolved
+
+
+def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
 
     Args:
-        _args: Parsed command line arguments for the ``build`` subcommand. The
-            current placeholder does not expect any specific options.
+        args: Parsed command line arguments for the ``build`` subcommand.
 
     Returns:
         None. Prints a placeholder message to indicate the command ran.
     """
+    resolved = []
+    if args.manifest:
+        resolved = parse_manifest(args.manifest)
+
     print("[build] Building egg... (placeholder)")
+    for path in resolved:
+        print(path)
 
 
 def hatch(_args: argparse.Namespace) -> None:
@@ -50,6 +72,16 @@ def main() -> None:
     )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
+    parser_build.add_argument(
+        "--manifest",
+        type=str,
+        help="Path to the manifest YAML",
+    )
+    parser_build.add_argument(
+        "--output",
+        type=str,
+        help="Output egg file path",
+    )
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser("hatch", help="Hatch an egg file")
