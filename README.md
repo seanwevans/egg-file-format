@@ -33,9 +33,34 @@ future releases.*
 
 ## Getting Started
 
-*Coming soon!* This project is in early stages.
-You can start experimenting with a minimal two-language notebook using
-[`examples/manifest.yaml`](examples/manifest.yaml).
+Follow these steps to build and hatch the demo archive:
+
+1. Install the project along with its dependencies:
+
+   ```bash
+   pip install .
+   ```
+
+   This installs the `egg` CLI and required packages such as **PyYAML**.
+
+2. Build the example egg using the provided manifest:
+
+   ```bash
+   egg build --manifest examples/manifest.yaml --output demo.egg
+   ```
+
+3. Hatch the resulting file:
+
+   ```bash
+   egg hatch --egg demo.egg
+   ```
+
+4. Optionally verify and inspect the archive:
+
+   ```bash
+   egg verify --egg demo.egg
+   egg info --egg demo.egg
+   ```
 
 - See [AGENTS.md](AGENTS.md) for the agent and build pipeline design.
 - See [FORMAT.md](FORMAT.md) for the egg file format specification.
@@ -124,11 +149,16 @@ roadmap.
 
 ### Testing
 
-Install dependencies using `pip install .` (or `pip install -e .`) so that
-packages like PyYAML are available. Then run `pytest` to execute the test
-suite. To check coverage, install `pytest-cov` and run
-`pytest --cov=egg --cov=egg_cli`. You can also check formatting or style with
-tools like `ruff` or `black`.
+PyYAML must be installed before running the test suite. The easiest way is to
+install the project itself which pulls in PyYAML as a dependency:
+
+```bash
+pip install .    # or `pip install -e .`
+```
+
+After installation run `pytest` to execute the tests. To check coverage, install
+`pytest-cov` and run `pytest --cov=egg --cov=egg_cli`. You can also check
+formatting or style with tools like `ruff` or `black`.
 
 ## Citation
 
