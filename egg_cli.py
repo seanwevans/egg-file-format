@@ -1,5 +1,7 @@
 import argparse
 
+from pathlib import Path
+
 
 def build(args: argparse.Namespace) -> None:
     """Build an egg file from sources.
@@ -9,11 +11,16 @@ def build(args: argparse.Namespace) -> None:
             ``args.manifest`` points to the manifest YAML file and
             ``args.output`` specifies the resulting egg path.
 
-    Returns:
-        None. Prints a placeholder message to indicate the command ran.
-    """
-    print(f"[build] Building egg from {args.manifest} -> {args.output} (placeholder)")
+def build(args: argparse.Namespace) -> None:
+    """Build an egg file from sources.
 
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments with ``manifest`` and ``output`` attributes.
+    """
+
+    print(f"[build] Building egg from {args.manifest} -> {args.output} (placeholder)")
 
 def hatch(args: argparse.Namespace) -> None:
     """Hatch (run) an egg file.
@@ -38,10 +45,19 @@ def main() -> None:
         None.
     """
     parser = argparse.ArgumentParser(description="Egg builder and hatcher CLI")
-    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show program version and exit",
+    )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
     parser_build.add_argument(
+
         "-m",
         "--manifest",
         default="manifest.yaml",
@@ -76,10 +92,13 @@ def main() -> None:
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
+
     if hasattr(args, "func"):
         args.func(args)
     else:
         parser.print_help()
+        parser.exit()
+
 
 
 if __name__ == "__main__":

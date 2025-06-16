@@ -82,6 +82,11 @@ pipeline is tracked in the
 [v0.5 – Builder Pipeline](ROADMAP.md#v05--builder-pipeline) section of the
 roadmap.
 
+### Testing
+
+After installing dependencies, run `pytest` to execute the test suite.
+You can also check formatting or style with tools like `ruff` or `black`.
+
 ---
 
 ## License
