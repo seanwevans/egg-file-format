@@ -51,8 +51,13 @@ def _collect_sources(manifest: Manifest) -> Iterable[Path]:
         yield Path(cell.source)
 
 
-def compose(manifest_path: Path | str, output_path: Path | str) -> None:
-    """Compose an egg archive by zipping manifest and sources.
+def compose(
+    manifest_path: Path | str,
+    output_path: Path | str,
+    *,
+    dependencies: Iterable[Path] | None = None,
+) -> None:
+    """Compose an egg archive by zipping manifest, sources, and dependencies.
 
     Parameters
     ----------
@@ -60,6 +65,8 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
         Path to the manifest YAML file describing sources.
     output_path : Path | str
         Destination ``.egg`` archive path.
+    dependencies : Iterable[Path] | None, optional
+        Additional files to include under ``runtime/``.
     """
     manifest_path = Path(manifest_path)
     output_path = Path(output_path)
@@ -86,6 +93,16 @@ def compose(manifest_path: Path | str, output_path: Path | str) -> None:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
             copied.append(dest)
+
+        # copy runtime dependencies under runtime/
+        runtime_dir = tmpdir_path / "runtime"
+        if dependencies:
+            for dep in dependencies:
+                if isinstance(dep, Path):
+                    dest = runtime_dir / dep.name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(dep, dest)
+                    copied.append(dest)
 
         # write hashes file and signature
         hashes = compute_hashes(copied, base_dir=tmpdir_path)

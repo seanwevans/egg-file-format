@@ -33,12 +33,12 @@ def build(args: argparse.Namespace) -> None:
         raise SystemExit(f"{output} exists. Use --force to overwrite.")
 
     # Fetch any runtime dependencies referenced in the manifest
-    fetch_runtime_blocks(manifest)
+    deps = fetch_runtime_blocks(manifest)
 
     if args.precompute:
         precompute_cells(manifest)
 
-    compose(manifest, output)
+    compose(manifest, output, dependencies=deps)
 
     if not verify_archive(output):
         raise SystemExit("Hash verification failed")

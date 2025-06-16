@@ -63,7 +63,9 @@ def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
     """Archives containing files not listed in hashes.yaml should fail."""
     output = tmp_path / "demo.egg"
     compose(
-        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml", output
+        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml",
+        output,
+        dependencies=[],
     )
 
     # Append an extra file not recorded in hashes.yaml
@@ -87,7 +89,9 @@ def test_sign_hashes_and_verify_signature(tmp_path: Path) -> None:
 def test_verify_archive_bad_signature(tmp_path: Path) -> None:
     output = tmp_path / "demo.egg"
     compose(
-        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml", output
+        Path(__file__).resolve().parent.parent / "examples" / "manifest.yaml",
+        output,
+        dependencies=[],
     )
 
     # Tamper signature

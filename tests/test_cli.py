@@ -533,6 +533,37 @@ def test_hashes_in_archive(monkeypatch, tmp_path):
             assert hashlib.sha256(data).hexdigest() == digest
 
 
+def test_build_includes_dependency_files(monkeypatch, tmp_path):
+    dep = tmp_path / "python.img"
+    dep.write_text("py")
+    src = tmp_path / "hello.py"
+    src.write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+dependencies:
+  - python.img
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    output = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "build", "--manifest", str(manifest), "--output", str(output)],
+    )
+    egg_cli.main()
+
+    assert verify_archive(output)
+    with zipfile.ZipFile(output) as zf:
+        names = set(zf.namelist())
+    assert "runtime/python.img" in names
+
+
 def test_deterministic_build(monkeypatch, tmp_path):
     base_args = [
         "egg_cli.py",
@@ -664,8 +695,8 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
 
     original = egg_cli.compose
 
-    def tamper(manifest, out):
-        original(manifest, out)
+    def tamper(manifest, out, *, dependencies=None):
+        original(manifest, out, dependencies=dependencies)
         with zipfile.ZipFile(out, "r") as zf:
             contents = {name: zf.read(name) for name in zf.namelist()}
         contents["hello.py"] = b"print('tampered')\n"
