@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from egg.utils import get_lang_command  # noqa: E402
 from egg.precompute import precompute_cells  # noqa: E402
+from egg.hashing import load_hashes, sha256_file  # noqa: E402
 
 
 def test_get_lang_command_env_override(monkeypatch):
@@ -80,3 +81,72 @@ cells:
     monkeypatch.setattr(shutil, "which", lambda c: None)
     with pytest.raises(FileNotFoundError):
         precompute_cells(manifest)
+
+
+def _write_manifest(path: Path) -> Path:
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    return path
+
+
+def test_precompute_caches_results(monkeypatch, tmp_path: Path) -> None:
+    src = tmp_path / "hello.py"
+    src.write_text("print('hi')\n")
+    manifest = _write_manifest(tmp_path / "manifest.yaml")
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True, stdout=None):
+        calls.append(cmd)
+        if stdout:
+            stdout.write("out1\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(shutil, "which", lambda c: c)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    out_file = src.with_suffix(".py.out")
+    cache = tmp_path / "precompute_hashes.yaml"
+
+    precompute_cells(manifest)
+    assert cache.is_file()
+    first_hash = load_hashes(cache)["hello.py"]
+    assert sha256_file(src) == first_hash
+    calls.clear()
+
+    precompute_cells(manifest)
+    assert calls == []
+    assert out_file.is_file()
+    assert load_hashes(cache)["hello.py"] == first_hash
+
+
+def test_precompute_cache_invalidated(monkeypatch, tmp_path: Path) -> None:
+    src = tmp_path / "hello.py"
+    src.write_text("print('hi')\n")
+    manifest = _write_manifest(tmp_path / "manifest.yaml")
+
+    monkeypatch.setattr(shutil, "which", lambda c: c)
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True, stdout=None):
+        calls.append(cmd)
+        if stdout:
+            stdout.write("out\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    precompute_cells(manifest)
+    calls.clear()
+
+    src.write_text("print('changed')\n")
+    precompute_cells(manifest)
+    assert len(calls) == 1
