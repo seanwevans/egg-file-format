@@ -1,9 +1,13 @@
 import argparse
+import logging
 import sys
 from pathlib import Path
+
 from egg.composer import compose
 
 __version__ = "0.1.0"
+
+logger = logging.getLogger(__name__)
 
 
 def build(args: argparse.Namespace) -> None:
@@ -12,32 +16,16 @@ def build(args: argparse.Namespace) -> None:
     output = Path(args.output)
 
     if output.exists() and not args.force:
-        raise FileExistsError(f"{output} already exists. Use --force to overwrite.")
-
-    manifest = Path(args.manifest)
-    output = Path(args.output)
-
-    if output.exists() and not args.force:
         raise SystemExit(f"{output} exists. Use --force to overwrite.")
-
-    from egg import compose
 
     compose(manifest, output)
 
-    print(f"[build] Building egg from {manifest} -> {output} (placeholder)")
-
-
-def hatch(args: argparse.Namespace) -> None:
-    """Hatch (run) an egg file."""
-    print(f"[hatch] Hatching {args.egg} (placeholder)")
-    
-    compose(Path(args.manifest), Path(args.output))
-    print("[build] Building egg from manifest.yaml -> out.egg (placeholder)")
+    logger.info("[build] Building egg from %s -> %s (placeholder)", manifest, output)
 
 
 def hatch(_args: argparse.Namespace) -> None:
     """Hatch (run) an egg file."""
-    print("[hatch] Hatching egg... (placeholder)")
+    logger.info("[hatch] Hatching egg... (placeholder)")
 
 
 
@@ -51,6 +39,13 @@ def main() -> None:
         action="version",
         version=f"%(prog)s {__version__}",
         help="Show program version and exit",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. Use -vv for debug output",
     )
 
     parser_build = subparsers.add_parser("build", help="Build an egg file")
@@ -81,6 +76,15 @@ def main() -> None:
     parser_hatch.set_defaults(func=hatch)
 
     args = parser.parse_args()
+    if args.verbose >= 2:
+        level = logging.DEBUG
+    elif args.verbose == 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+    logging.basicConfig(level=level, format="%(message)s")
+    logging.getLogger().setLevel(level)
+
     if hasattr(args, "func"):
         args.func(args)
     else:

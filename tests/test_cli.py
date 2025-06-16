@@ -2,6 +2,7 @@ import os
 import sys
 
 import pytest
+import logging
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import zipfile
@@ -11,13 +12,15 @@ import yaml
 import egg_cli  # noqa: E402
 
 
-def test_build(monkeypatch, tmp_path, capsys):
+def test_build(monkeypatch, tmp_path, caplog):
     output = tmp_path / "demo.egg"
+    caplog.set_level(logging.INFO)
     monkeypatch.setattr(
         sys,
         "argv",
         [
             "egg_cli.py",
+            "--verbose",
             "build",
             "--manifest",
             os.path.join("examples", "manifest.yaml"),
@@ -27,12 +30,11 @@ def test_build(monkeypatch, tmp_path, capsys):
     )
     egg_cli.main()
 
-    captured = capsys.readouterr()
     expected = (
         f"[build] Building egg from {os.path.join('examples', 'manifest.yaml')} "
         f"-> {output} (placeholder)"
     )
-    assert expected in captured.out
+    assert expected in caplog.text
 
 
     assert output.is_file()
@@ -42,11 +44,11 @@ def test_build(monkeypatch, tmp_path, capsys):
     assert "hello.R" in names
 
 
-def test_hatch(monkeypatch, capsys):
-    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch"])
+def test_hatch(monkeypatch, caplog):
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "--verbose", "hatch"])
     egg_cli.main()
-    captured = capsys.readouterr()
-    assert "[hatch] Hatching egg... (placeholder)" in captured.out
+    assert "[hatch] Hatching egg... (placeholder)" in caplog.text
 
 
 def test_requires_subcommand(monkeypatch):
