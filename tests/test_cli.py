@@ -45,6 +45,34 @@ def test_build(monkeypatch, tmp_path, caplog):
     assert "hello.R" in names
 
 
+def test_build_precompute(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+
+    called = []
+
+    def fake_precompute(path):
+        called.append(Path(path))
+
+    monkeypatch.setattr(egg_cli, "precompute_cells", fake_precompute)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+            "--precompute",
+        ],
+    )
+    egg_cli.main()
+
+    assert len(called) == 1
+    assert output.is_file()
+
+
 def test_build_force_overwrite(monkeypatch, tmp_path):
     """Building should require --force to overwrite existing output."""
     output = tmp_path / "demo.egg"

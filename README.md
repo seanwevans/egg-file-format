@@ -43,10 +43,11 @@ Follow these steps to build and hatch the demo archive:
 
    This installs the `egg` CLI and required packages such as **PyYAML**.
 
-2. Build the example egg using the provided manifest:
+2. Build the example egg using the provided manifest (add `--precompute` to
+   capture outputs during the build):
 
    ```bash
-   egg build --manifest examples/manifest.yaml --output demo.egg
+   egg build --manifest examples/manifest.yaml --output demo.egg --precompute
    ```
 
 3. Hatch the resulting file:
@@ -81,7 +82,7 @@ After installation the `egg` command becomes available. The CLI currently
 provides four subcommands:
 
 ```bash
-egg build --manifest <file> --output <egg> [--force]
+egg build --manifest <file> --output <egg> [--force] [--precompute]
 egg hatch --egg <egg> [--no-sandbox]
 egg verify --egg <egg>
 egg info --egg <egg>
@@ -118,7 +119,7 @@ Below is a minimal walkthrough using the placeholder implementation:
 2. Run the build command specifying the manifest and desired output:
 
    ```bash
-   egg build --manifest examples/manifest.yaml --output demo.egg
+   egg build --manifest examples/manifest.yaml --output demo.egg --precompute
    ```
 
 3. Hatch the resulting file:
