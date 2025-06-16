@@ -15,6 +15,10 @@ license = "MIT"
 [project.scripts]
 egg = "egg_cli:main"
 
+[project.entry-points."egg.agents"]
+
+[project.entry-points."egg.runtimes"]
+
 [tool.setuptools]
 packages = ["egg"]
 py-modules = ["egg_cli"]
