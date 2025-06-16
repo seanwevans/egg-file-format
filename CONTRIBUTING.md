@@ -16,6 +16,12 @@ Thank you for considering contributing to **egg file format**!
 
 4. **Code Style:**
    - Follow existing conventions and document public APIs.
+   - Install and enable pre-commit hooks:
+
+     ```bash
+     pip install pre-commit
+     pre-commit install
+     ```
 
 5. **Security:**
    - Do not submit code that weakens sandboxing, verification, or reproducibility.
