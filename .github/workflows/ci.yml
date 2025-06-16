@@ -24,12 +24,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        if [ -n "$(git status --porcelain)" ]; then
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git commit -am "chore: format with black"
-          git push
-        fi
+        black .
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git commit -am "chore: format with black" || echo "No changes to commit"
+        git push
     - name: Lint
       run: |
         flake8
