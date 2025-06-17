@@ -11,7 +11,12 @@ from typing import Iterable, List
 from .manifest import load_manifest, Manifest
 
 
-from .hashing import compute_hashes, write_hashes_file, sign_hashes, SIGNING_KEY
+from .hashing import (
+    compute_hashes,
+    write_hashes_file,
+    sign_hashes,
+    SIGNING_KEY,
+)
 
 
 def _collect_sources(manifest: Manifest) -> Iterable[Path]:
@@ -25,6 +30,7 @@ def compose(
     output_path: Path | str,
     *,
     dependencies: Iterable[Path] | None = None,
+    signing_key: bytes | None = None,
 ) -> None:
     """Compose an egg archive by zipping manifest, sources, and dependencies.
 
@@ -36,6 +42,8 @@ def compose(
         Destination ``.egg`` archive path.
     dependencies : Iterable[Path] | None, optional
         Additional files to include under ``runtime/``.
+    signing_key : bytes | None, optional
+        Key used to sign ``hashes.yaml``. Defaults to ``SIGNING_KEY``.
     """
     manifest_path = Path(manifest_path)
     output_path = Path(output_path)
@@ -83,7 +91,8 @@ def compose(
         hashes = compute_hashes(copied, base_dir=tmpdir_path)
         hashes_path = tmpdir_path / "hashes.yaml"
         write_hashes_file(hashes, hashes_path)
-        sig = sign_hashes(hashes_path, key=SIGNING_KEY)
+        key = SIGNING_KEY if signing_key is None else signing_key
+        sig = sign_hashes(hashes_path, key=key)
         sig_path = tmpdir_path / "hashes.sig"
         sig_path.write_text(sig, encoding="utf-8")
         copied.extend([hashes_path, sig_path])

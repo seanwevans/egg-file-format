@@ -40,13 +40,13 @@ For a Julia example see `examples/julia_manifest.yaml`.
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute]
+egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
 egg hatch  --egg <egg> [--no-sandbox]
-egg verify --egg <egg>
+egg verify --egg <egg> [--signing-key <file>]
 egg info   --egg <egg>
 ```
 
-Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. The signing key for `hashes.yaml` can be changed via `EGG_SIGNING_KEY`.
+Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. The signing key for `hashes.yaml` can be changed with `--signing-key` or the `EGG_SIGNING_KEY` environment variable.
 
 ### Testing
 

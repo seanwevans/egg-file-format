@@ -703,13 +703,82 @@ def test_build_verification_success(monkeypatch, tmp_path):
     assert verify_archive(output)
 
 
+def test_build_with_signing_key(monkeypatch, tmp_path):
+    output = tmp_path / "demo.egg"
+    key = tmp_path / "key.txt"
+    key.write_text("secret")
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+            "--signing-key",
+            str(key),
+        ],
+    )
+    egg_cli.main()
+
+    assert output.is_file()
+    assert not verify_archive(output)
+    assert verify_archive(output, key=key.read_bytes())
+
+
+def test_verify_subcommand_signing_key(monkeypatch, tmp_path, caplog):
+    output = tmp_path / "demo.egg"
+    key = tmp_path / "key.txt"
+    key.write_text("secret")
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(output),
+            "--signing-key",
+            str(key),
+        ],
+    )
+    egg_cli.main()
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "verify", "--egg", str(output)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "--verbose",
+            "verify",
+            "--egg",
+            str(output),
+            "--signing-key",
+            str(key),
+        ],
+    )
+    egg_cli.main()
+    assert f"[verify] {output} verified successfully" in caplog.text
+
+
 def test_build_detects_tampering(monkeypatch, tmp_path):
     output = tmp_path / "demo.egg"
 
     original = egg_cli.compose
 
-    def tamper(manifest, out, *, dependencies=None):
-        original(manifest, out, dependencies=dependencies)
+    def tamper(manifest, out, *, dependencies=None, signing_key=None):
+        original(manifest, out, dependencies=dependencies, signing_key=signing_key)
         with zipfile.ZipFile(out, "r") as zf:
             contents = {name: zf.read(name) for name in zf.namelist()}
         contents["hello.py"] = b"print('tampered')\n"
