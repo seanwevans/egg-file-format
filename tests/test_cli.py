@@ -13,7 +13,7 @@ import importlib
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import egg_cli  # noqa: E402
-from egg.hashing import verify_archive  # noqa: E402
+from egg.hashing import verify_archive, sign_hashes  # noqa: E402
 
 
 def test_build(monkeypatch, tmp_path, caplog):
@@ -186,6 +186,10 @@ def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
 
     def fake_prepare(*a, **kw):
         called.append(True)
+
+    # execute once to cover the function body
+    fake_prepare(None, None)
+    called.clear()
 
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
     monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
@@ -1031,3 +1035,62 @@ def test_verbose_debug(monkeypatch, tmp_path):
     finally:
         root_logger.setLevel(prev)
     assert output.is_file()
+
+
+def test_check_platform_error(monkeypatch):
+    monkeypatch.setattr(egg_cli.platform, "system", lambda: "Solaris")
+    with pytest.raises(SystemExit):
+        egg_cli.check_platform()
+
+
+def test_info_manifest_missing_after_verify(monkeypatch, tmp_path):
+    foo = tmp_path / "foo.txt"
+    foo.write_text("x")
+    hashes = {"foo.txt": hashlib.sha256(b"x").hexdigest()}
+    hashes_path = tmp_path / "hashes.yaml"
+    hashes_path.write_text(yaml.safe_dump(hashes, sort_keys=True))
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(sign_hashes(hashes_path))
+    egg_path = tmp_path / "demo.egg"
+    with zipfile.ZipFile(egg_path, "w") as zf:
+        for path in [foo, hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as f:
+                zf.writestr(zi, f.read())
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit, match="manifest.yaml not found"):
+        egg_cli.main()
+
+
+def test_info_shows_optional_fields(monkeypatch, tmp_path, capsys):
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+author: Bob
+created: '2024-01-01'
+license: MIT
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    (tmp_path / "hello.py").write_text("print('hi')\n")
+    egg_path = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "build", "--manifest", str(manifest), "--output", str(egg_path)],
+    )
+    egg_cli.main()
+    capsys.readouterr()
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
+    egg_cli.main()
+    out = capsys.readouterr().out
+    assert "Author: Bob" in out
+    assert "License: MIT" in out
+    assert "Created: 2024-01-01" in out
