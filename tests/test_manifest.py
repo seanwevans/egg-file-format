@@ -330,3 +330,32 @@ cells: []
     )
     with pytest.raises(ValueError, match="'license' must be a string"):
         load_manifest(path)
+
+
+def test_dependencies_must_be_list(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+dependencies: {}
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="'dependencies' must be a list"):
+        load_manifest(path)
+
+
+def test_dependency_entries_must_be_strings(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+dependencies:
+  - 1
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="dependency entries must be strings"):
+        load_manifest(path)

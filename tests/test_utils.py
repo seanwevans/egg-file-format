@@ -44,6 +44,8 @@ def test_load_plugins_select(monkeypatch):
             return []
 
     monkeypatch.setattr(mod, "entry_points", lambda: Container())
+    # call select with an unknown group to cover the fallback branch
+    Container().select(group="other")
     mod.load_plugins()
 
     assert runtime_called == [True]

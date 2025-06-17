@@ -228,3 +228,9 @@ def test_verify_archive_env_key(monkeypatch, tmp_path):
     monkeypatch.setenv("EGG_SIGNING_KEY", "other")
     hashing = importlib.reload(hashing)
     assert not hashing.verify_archive(archive)
+
+
+def test_load_hashes_empty_file(tmp_path: Path) -> None:
+    path = tmp_path / "hashes.yaml"
+    path.write_text("")
+    assert load_hashes(path) == {}

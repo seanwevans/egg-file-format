@@ -79,3 +79,13 @@ def test_prepare_images_skips_duplicate(tmp_path: Path):
     )
     images = prepare_images(manifest, tmp_path)
     assert list(images.keys()) == ["python"]
+
+
+def test_check_platform_unsupported(monkeypatch):
+    import importlib
+    import egg.sandboxer as sb
+
+    monkeypatch.setattr(sb.platform, "system", lambda: "Unknown")
+    sb = importlib.reload(sb)
+    with pytest.raises(RuntimeError, match="Unsupported platform"):
+        sb.check_platform()
