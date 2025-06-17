@@ -1,7 +1,7 @@
 # 🥚 egg file format
 
 [![Coverage](https://img.shields.io/badge/coverage-100%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.46%2F10-green)](https://pylint.pycqa.org/)
+[![Pylint](https://img.shields.io/badge/pylint-9.61%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -26,7 +26,7 @@
 Install the CLI and build the demo archive:
 
 ```bash
-pip install .
+pip install -e .  # install in editable mode to load example plug-ins
 egg build --manifest examples/manifest.yaml --output demo.egg --precompute
 egg hatch --egg demo.egg
 egg verify --egg demo.egg

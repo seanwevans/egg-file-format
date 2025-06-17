@@ -16,8 +16,10 @@ license = "MIT"
 egg = "egg_cli:main"
 
 [project.entry-points."egg.agents"]
+hello = "examples.hello_agent:register"
 
 [project.entry-points."egg.runtimes"]
+ruby = "examples.ruby_plugin:register"
 
 [tool.setuptools]
 packages = ["egg"]

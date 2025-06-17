@@ -19,6 +19,11 @@ def test_get_lang_command_env_override(monkeypatch):
     assert get_lang_command("python")[0] == sys.executable
 
 
+def test_get_lang_command_split(monkeypatch):
+    monkeypatch.setenv("EGG_CMD_PYTHON", "python -u")
+    assert get_lang_command("python") == ["python", "-u"]
+
+
 def test_precompute_cells_success(monkeypatch, tmp_path: Path):
     src = tmp_path / "hello.py"
     src.write_text("print('hi')\n")
