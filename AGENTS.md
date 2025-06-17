@@ -62,6 +62,7 @@ Run the project's automated checks before submitting a pull request:
 
 ```bash
 pip install .
+pip install -r requirements-dev.txt
 pre-commit run --all-files
 ```
 
