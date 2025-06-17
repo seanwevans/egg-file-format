@@ -86,6 +86,11 @@ def load_hashes(path: Path) -> Dict[str, str]:
         return {}
     if not isinstance(data, dict):
         raise ValueError("hashes.yaml must contain a mapping")
+
+    for key, value in data.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            raise ValueError("hashes.yaml keys and values must be strings")
+
     return data
 
 
