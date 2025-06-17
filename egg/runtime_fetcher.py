@@ -13,6 +13,7 @@ import os
 import shutil
 from urllib.parse import quote
 from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 from pathlib import Path
 from typing import List
 
@@ -44,7 +45,9 @@ def _download_container(image: str, dest: Path, base_url: str) -> Path:
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
-    download to an arbitrary location.
+    download to an arbitrary location. If the HTTP request fails, a
+    ``RuntimeError`` is raised with the failing URL and original
+    exception.
     """
 
     manifest_dir = dest.parent.resolve()
@@ -59,8 +62,11 @@ def _download_container(image: str, dest: Path, base_url: str) -> Path:
 
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
-    with urlopen(url) as resp, open(dest, "wb") as fh:
-        shutil.copyfileobj(resp, fh)
+    try:
+        with urlopen(url) as resp, open(dest, "wb") as fh:
+            shutil.copyfileobj(resp, fh)
+    except (HTTPError, URLError) as exc:  # pragma: no cover - network errors
+        raise RuntimeError(f"Failed to download {url}: {exc}") from exc
     return dest
 
 

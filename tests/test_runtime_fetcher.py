@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 
 import pytest
+import urllib.error
+import egg.runtime_fetcher as runtime_fetcher
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -170,4 +172,31 @@ dependencies:
     )
 
     with pytest.raises(ValueError):
+        fetch_runtime_blocks(manifest)
+
+
+def test_registry_download_error(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+
+    def fail(url):
+        raise urllib.error.URLError("boom")
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
+    with pytest.raises(
+        RuntimeError, match=r"http://example.com/python%3A3.11.img.*boom"
+    ):
         fetch_runtime_blocks(manifest)
