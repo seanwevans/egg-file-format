@@ -24,7 +24,7 @@ jobs:
         pip install pytest pytest-cov flake8 black pylint pre-commit
         pip install -e .
     - name: Run pre-commit
-      run: pre-commit run --all-files
+      run: pre-commit run --all-files || pre-commit run --all-files
     - name: Commit results
       if: github.event_name == 'push'
       env:
