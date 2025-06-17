@@ -49,9 +49,13 @@ def build(args: argparse.Namespace) -> None:
     if args.precompute:
         precompute_cells(manifest)
 
-    compose(manifest, output, dependencies=deps)
+    key: bytes | None = None
+    if args.signing_key:
+        key = Path(args.signing_key).read_bytes()
 
-    if not verify_archive(output):
+    compose(manifest, output, dependencies=deps, signing_key=key)
+
+    if not verify_archive(output, key=key):
         raise SystemExit("Hash verification failed")
 
     logger.info("[build] Building egg from %s -> %s", manifest, output)
@@ -96,7 +100,12 @@ def verify(args: argparse.Namespace) -> None:
     egg_path = Path(args.egg)
     if not egg_path.is_file():
         raise SystemExit(f"Egg file not found: {egg_path}")
-    if verify_archive(egg_path):
+
+    key: bytes | None = None
+    if args.signing_key:
+        key = Path(args.signing_key).read_bytes()
+
+    if verify_archive(egg_path, key=key):
         logger.info("[verify] %s verified successfully", egg_path)
     else:
         raise SystemExit("Hash verification failed")
@@ -195,6 +204,10 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Execute cells and store outputs before composing",
     )
+    parser_build.add_argument(
+        "--signing-key",
+        help="Path to signing key file",
+    )
     parser_build.set_defaults(func=build)
 
     parser_hatch = subparsers.add_parser(
@@ -216,6 +229,10 @@ def main(argv: list[str] | None = None) -> None:
         "--egg",
         default="out.egg",
         help="Egg file to verify",
+    )
+    parser_verify.add_argument(
+        "--signing-key",
+        help="Path to signing key file",
     )
     parser_verify.set_defaults(func=verify)
 
