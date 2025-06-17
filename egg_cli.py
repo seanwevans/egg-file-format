@@ -56,6 +56,7 @@ def build(args: argparse.Namespace) -> None:
     compose(manifest, output, dependencies=deps, signing_key=key)
 
     if not verify_archive(output, key=key):
+        output.unlink(missing_ok=True)
         raise SystemExit("Hash verification failed")
 
     logger.info("[build] Building egg from %s -> %s", manifest, output)

@@ -40,8 +40,15 @@ def _get_registry_url() -> str | None:
     return None
 
 
-def _download_container(image: str, dest: Path, base_url: str) -> Path:
+def _download_container(
+    image: str, dest: Path, base_url: str, timeout: float = 30.0
+) -> Path:
     """Download ``image`` from ``base_url`` to ``dest``.
+
+    Parameters
+    ----------
+    timeout : float, optional
+        Socket timeout passed to ``urlopen``.
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
@@ -63,7 +70,7 @@ def _download_container(image: str, dest: Path, base_url: str) -> Path:
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
     try:
-        with urlopen(url) as resp, open(dest, "wb") as fh:
+        with urlopen(url, timeout=timeout) as resp, open(dest, "wb") as fh:
             shutil.copyfileobj(resp, fh)
     except (HTTPError, URLError) as exc:  # pragma: no cover - network errors
         raise RuntimeError(f"Failed to download {url}: {exc}") from exc
@@ -112,11 +119,15 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
 
     manifest_dir = manifest_path.parent.resolve()
     resolved: List[Path | str] = []
+    seen: set[str] = set()
     registry = _get_registry_url()
 
     for dep in deps:
         if not isinstance(dep, str):
             raise ValueError("dependency entries must be strings")
+        if dep in seen:
+            raise ValueError(f"Duplicate dependency entry: {dep}")
+        seen.add(dep)
         if ":" in dep:
             if "/" in dep or "\\" in dep:
                 raise ValueError(f"Invalid container image name: {dep}")

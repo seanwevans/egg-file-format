@@ -298,6 +298,38 @@ def test_hatch_custom_commands(monkeypatch, tmp_path):
     )
 
 
+def test_hatch_custom_commands_with_args(monkeypatch, tmp_path):
+    egg_path = tmp_path / "demo.egg"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
+    monkeypatch.setenv("EGG_CMD_PYTHON", "python -u")
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    egg_cli.main()
+
+    assert any(cmd[:2] == ["python", "-u"] for cmd in calls)
+
+
 def test_hatch_unknown_language(monkeypatch, tmp_path):
     """Unknown cell languages should produce a clear error."""
     src = tmp_path / "hello.foo"
@@ -811,6 +843,7 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as exc:
         egg_cli.main()
     assert "Hash verification failed" in str(exc.value)
+    assert not output.exists()
 
 
 def test_preserve_relative_paths(monkeypatch, tmp_path):

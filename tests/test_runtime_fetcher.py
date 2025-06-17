@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+import io
 
 import pytest
 import urllib.error
@@ -55,6 +56,28 @@ dependencies:
         fetch_runtime_blocks(manifest)
 
 
+def test_duplicate_dependencies(tmp_path: Path) -> None:
+    dep = tmp_path / "python.img"
+    dep.write_text("py")
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        f"""
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - {dep.name}
+  - {dep.name}
+"""
+    )
+
+    with pytest.raises(ValueError):
+        fetch_runtime_blocks(manifest)
+
+
 def test_container_dependencies(tmp_path: Path) -> None:
     """Container-style specs should be returned without file checks."""
     (tmp_path / "code.py").write_text("print('hi')\n")
@@ -75,6 +98,35 @@ dependencies:
 
     paths = fetch_runtime_blocks(manifest)
     assert paths == ["python:3.11", "r:4.3"]
+
+
+def test_duplicate_container_dependencies(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+  - python:3.11
+"""
+    )
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+
+    class Dummy(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", lambda *a, **kw: Dummy(b"d"))
+    with pytest.raises(ValueError):
+        fetch_runtime_blocks(manifest)
 
 
 def _start_server(directory: Path):
@@ -192,7 +244,8 @@ dependencies:
 
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
 
-    def fail(url):
+    def fail(url, *, timeout=None):
+        assert timeout == 30.0
         raise urllib.error.URLError("boom")
 
     monkeypatch.setattr(runtime_fetcher, "urlopen", fail)

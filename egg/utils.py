@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
+import shlex
 import sys
 import logging
 from importlib.metadata import entry_points
@@ -45,7 +46,7 @@ def get_lang_command(lang: str) -> list[str] | None:
 
     override = os.getenv(f"EGG_CMD_{lang.upper()}")
     if override:
-        return [override]
+        return shlex.split(override)
     return DEFAULT_LANG_COMMANDS.get(lang)
 
 
