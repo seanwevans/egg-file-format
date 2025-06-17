@@ -67,6 +67,14 @@ def test_load_hashes_requires_mapping(tmp_path: Path) -> None:
         load_hashes(path)
 
 
+def test_load_hashes_non_string_value(tmp_path: Path) -> None:
+    """Non-string hash values should raise ValueError."""
+    path = tmp_path / "hashes.yaml"
+    path.write_text("foo: 1\n")
+    with pytest.raises(ValueError):
+        load_hashes(path)
+
+
 def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
     """Archives containing files not listed in hashes.yaml should fail."""
     output = tmp_path / "demo.egg"
