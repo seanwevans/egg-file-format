@@ -9,6 +9,7 @@ import sys
 import tempfile
 import zipfile
 import platform
+from egg.constants import SUPPORTED_PLATFORMS
 from pathlib import Path
 
 from egg.composer import compose
@@ -23,8 +24,6 @@ from egg.utils import get_lang_command, load_plugins
 __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
-
-SUPPORTED_PLATFORMS = {"Linux", "Darwin", "Windows"}
 
 
 def check_platform() -> None:

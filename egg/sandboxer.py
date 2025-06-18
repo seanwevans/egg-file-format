@@ -16,14 +16,13 @@ import logging
 import tempfile
 import subprocess
 import platform
+from .constants import SUPPORTED_PLATFORMS
 from pathlib import Path
 from typing import Dict
 
 from .manifest import Manifest
 
 logger = logging.getLogger(__name__)
-
-SUPPORTED_PLATFORMS = {"Linux", "Darwin", "Windows"}
 
 
 def check_platform() -> None:
