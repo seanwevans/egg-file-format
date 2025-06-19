@@ -22,6 +22,9 @@ Thank you for considering contributing to **egg file format**!
      pip install pre-commit
      pre-commit install
      ```
+   - Running `pre-commit` will update the coverage and pylint badges in
+     `README.md`. Commit these README changes as well. See
+     [`scripts/update_badges.py`](scripts/update_badges.py) for details.
 
 5. **Security:**
    - Do not submit code that weakens sandboxing, verification, or reproducibility.
