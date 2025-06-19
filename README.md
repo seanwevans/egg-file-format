@@ -35,6 +35,13 @@ egg info --egg demo.egg
 
 For a Julia example see `examples/julia_manifest.yaml`.
 
+## Writing Plug-ins
+
+Egg can be extended with custom Python modules. Implement a `register()`
+function that either returns runtime commands or performs agent side effects.
+Declare the module under `egg.runtimes` or `egg.agents` in
+`pyproject.toml`. See [examples/](examples/) for sample plug-ins.
+
 ---
 
 ## CLI Overview
