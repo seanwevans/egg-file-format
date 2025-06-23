@@ -57,3 +57,13 @@ cells:
     output = tmp_path / "new" / "demo.egg"
     compose(manifest, output)
     assert output.is_file()
+
+
+def test_normalize_source_traversal(tmp_path: Path) -> None:
+    with pytest.raises(ValueError):
+        _normalize_source("../evil.py", tmp_path)
+
+
+def test_normalize_source_valid_relative(tmp_path: Path) -> None:
+    normalized = _normalize_source("sub/../good.py", tmp_path)
+    assert normalized == "good.py"

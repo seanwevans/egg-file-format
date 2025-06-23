@@ -1,6 +1,7 @@
 import os
 import sys
 import importlib
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -77,3 +78,15 @@ def test_load_plugins_legacy(monkeypatch):
     assert runtime_called == [True]
     assert agent_called == [True]
     assert mod.DEFAULT_LANG_COMMANDS["ruby"] == ["ruby"]
+
+
+def test_is_relative_to_inside(tmp_path: Path) -> None:
+    base = tmp_path / "base"
+    inner = base / "x" / "y.txt"
+    assert utils._is_relative_to(inner, base)
+
+
+def test_is_relative_to_outside(tmp_path: Path) -> None:
+    base = tmp_path / "base"
+    other = tmp_path / "other" / "z.txt"
+    assert not utils._is_relative_to(other, base)
