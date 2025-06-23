@@ -93,6 +93,7 @@ def prepare_images(
         Mapping of language name to created image directory path.
     """
     check_platform()
+    system = platform.system()
     if base_dir is None:
         base = Path(tempfile.mkdtemp())
     else:
@@ -103,7 +104,7 @@ def prepare_images(
         if lang in images:
             continue  # pragma: no cover
         img_dir = base / f"{lang}-image"
-        if platform.system() == "Linux":
+        if system == "Linux":
             build_microvm_image(lang, img_dir)
         else:
             build_container_image(lang, img_dir)
