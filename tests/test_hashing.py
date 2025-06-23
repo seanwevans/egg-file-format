@@ -59,6 +59,16 @@ def test_duplicate_basenames(tmp_path: Path) -> None:
         compute_hashes([f1, f2])
 
 
+def test_compute_hashes_base_dir_not_parent(tmp_path: Path) -> None:
+    """Non-parent ``base_dir`` should raise ``ValueError``."""
+    foo = tmp_path / "foo.txt"
+    foo.write_text("A")
+    other = tmp_path / "other"
+    other.mkdir()
+    with pytest.raises(ValueError):
+        compute_hashes([foo], base_dir=other)
+
+
 def test_load_hashes_requires_mapping(tmp_path: Path) -> None:
     """Non-mapping YAML content should raise ValueError."""
     path = tmp_path / "hashes.yaml"
