@@ -42,6 +42,14 @@ function that either returns runtime commands or performs agent side effects.
 Declare the module under `egg.runtimes` or `egg.agents` in
 `pyproject.toml`. See [examples/](examples/) for sample plug-ins.
 
+Install your plug-in like any other package and run the CLI with the
+``-vv`` flag to confirm it loads:
+
+```bash
+pip install my-egg-plugin
+egg -vv --help  # shows "[plugins] loaded ..." messages
+```
+
 ---
 
 ## CLI Overview
