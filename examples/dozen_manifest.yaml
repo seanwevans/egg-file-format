@@ -1,0 +1,27 @@
+name: "Dozen Languages"
+description: "Showcase mixing twelve languages in one egg"
+cells:
+  - language: python
+    source: hello.py
+  - language: r
+    source: hello.R
+  - language: bash
+    source: say.sh
+  - language: julia
+    source: julia_example.jl
+  - language: ruby
+    source: hello.rb
+  - language: perl
+    source: hello.pl
+  - language: lua
+    source: hello.lua
+  - language: php
+    source: hello.php
+  - language: javascript
+    source: hello.js
+  - language: go
+    source: hello.go
+  - language: rust
+    source: hello.rs
+  - language: tcl
+    source: hello.tcl

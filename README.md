@@ -34,6 +34,7 @@ egg info --egg demo.egg
 ```
 
 For a Julia example see `examples/julia_manifest.yaml`.
+A full manifest mixing twelve languages is provided in `examples/dozen_manifest.yaml`.
 
 ## Writing Plug-ins
 
