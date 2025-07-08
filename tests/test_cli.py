@@ -3,6 +3,7 @@ import sys
 import zipfile
 import hashlib
 import yaml
+from nacl.signing import SigningKey
 import pytest
 import logging
 import subprocess
@@ -712,7 +713,7 @@ def test_verify_bad_signature(monkeypatch, tmp_path):
     egg_cli.main()
 
     with zipfile.ZipFile(output, "a") as zf:
-        zf.writestr("hashes.sig", "0" * 64)
+        zf.writestr("hashes.sig", "0" * 128)
 
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "verify", "--egg", str(output)])
     with pytest.raises(SystemExit):
@@ -754,7 +755,7 @@ def test_build_with_signing_key(monkeypatch, tmp_path):
             os.path.join("examples", "manifest.yaml"),
             "--output",
             str(output),
-            "--signing-key",
+            "--private-key",
             str(key),
         ],
     )
@@ -762,13 +763,17 @@ def test_build_with_signing_key(monkeypatch, tmp_path):
 
     assert output.is_file()
     assert not verify_archive(output)
-    assert verify_archive(output, key=key.read_bytes())
+    pub = SigningKey(hashlib.sha256(key.read_bytes()).digest()).verify_key.encode()
+    assert verify_archive(output, public_key=pub)
 
 
 def test_verify_subcommand_signing_key(monkeypatch, tmp_path, caplog):
     output = tmp_path / "demo.egg"
     key = tmp_path / "key.txt"
     key.write_text("secret")
+    pub = SigningKey(hashlib.sha256(key.read_bytes()).digest()).verify_key.encode()
+    pub_path = tmp_path / "pub.key"
+    pub_path.write_bytes(pub)
 
     monkeypatch.setattr(
         sys,
@@ -780,7 +785,7 @@ def test_verify_subcommand_signing_key(monkeypatch, tmp_path, caplog):
             os.path.join("examples", "manifest.yaml"),
             "--output",
             str(output),
-            "--signing-key",
+            "--private-key",
             str(key),
         ],
     )
@@ -800,8 +805,8 @@ def test_verify_subcommand_signing_key(monkeypatch, tmp_path, caplog):
             "verify",
             "--egg",
             str(output),
-            "--signing-key",
-            str(key),
+            "--public-key",
+            str(pub_path),
         ],
     )
     egg_cli.main()
@@ -813,8 +818,8 @@ def test_build_detects_tampering(monkeypatch, tmp_path):
 
     original = egg_cli.compose
 
-    def tamper(manifest, out, *, dependencies=None, signing_key=None):
-        original(manifest, out, dependencies=dependencies, signing_key=signing_key)
+    def tamper(manifest, out, *, dependencies=None, private_key=None):
+        original(manifest, out, dependencies=dependencies, private_key=private_key)
         with zipfile.ZipFile(out, "r") as zf:
             contents = {name: zf.read(name) for name in zf.namelist()}
         contents["hello.py"] = b"print('tampered')\n"
@@ -979,7 +984,7 @@ def test_hatch_bad_signature(monkeypatch, tmp_path):
 
     # tamper signature
     with zipfile.ZipFile(egg_path, "a") as zf:
-        zf.writestr("hashes.sig", "0" * 64)
+        zf.writestr("hashes.sig", "0" * 128)
 
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: None)
     monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
@@ -1038,7 +1043,7 @@ def test_info_bad_signature(monkeypatch, tmp_path):
 
     # tamper with signature
     with zipfile.ZipFile(egg_path, "a") as zf:
-        zf.writestr("hashes.sig", "0" * 64)
+        zf.writestr("hashes.sig", "0" * 128)
 
     monkeypatch.setattr(sys, "argv", ["egg_cli.py", "info", "--egg", str(egg_path)])
     with pytest.raises(SystemExit):
