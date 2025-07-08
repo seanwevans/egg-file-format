@@ -1,7 +1,8 @@
 # 🥚 egg file format
 
+
 [![Coverage](https://img.shields.io/badge/coverage-100%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.39%2F10-green)](https://pylint.pycqa.org/)
+[![Pylint](https://img.shields.io/badge/pylint-9.40%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -51,15 +52,54 @@ pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
+## Advanced Usage
+
+Egg discovers custom runtimes and agents via Python entry points. Add a
+`register()` function in your package and list it under the appropriate
+group in `pyproject.toml`:
+
+```toml
+[project.entry-points."egg.runtimes"]
+cool = "mypkg.cool_runtime:register"
+
+[project.entry-points."egg.agents"]
+extra = "mypkg.extra_agent:register"
+```
+
+Running `egg -vv --help` will confirm that these plug-ins loaded.
+
+The manifest `examples/advanced_manifest.yaml` demonstrates how to
+declare dependencies and enable permissions:
+
+```yaml
+name: "Advanced Notebook"
+description: "Example demonstrating dependencies, permissions, and mixed languages"
+dependencies:
+  - python:3.11
+  - r:4.3
+  - bash:5
+permissions:
+  network: true
+  filesystem: true
+```
+
+It runs Python, Bash and R cells from the `examples/` directory. Build
+and hatch it like so:
+
+```bash
+egg build --manifest examples/advanced_manifest.yaml --output advanced.egg --precompute
+egg hatch --egg advanced.egg
+```
+
 ---
 
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
-egg hatch  --egg <egg> [--no-sandbox]
-egg verify --egg <egg> [--signing-key <file>]
-egg info   --egg <egg>
+egg build  --manifest <file> --output <egg> [--precompute] [--private-key <file>]
+egg hatch  --egg <egg> [--no-sandbox] [--public-key <file>]
+egg verify --egg <egg> [--public-key <file>]
+egg info   --egg <egg> [--public-key <file>]
 ```
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).

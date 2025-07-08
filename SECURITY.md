@@ -22,12 +22,15 @@ mechanisms built into the format and CLI tools.
   root filesystem.
 - During `egg hatch`, the sandboxer prepares a container image (or placeholder
   `microvm.conf` in this prototype) for every runtime.
+- Firecracker requires a Linux host with KVM enabled and the `firecracker`
+  binary installed. Non-Linux platforms automatically fall back to Docker
+  containers for isolation.
 - Passing `--no-sandbox` disables isolation and should only be used for testing
   trusted eggs.
 
 ### Integrity & Authenticity
 - All blocks and assets are deterministically chunked, hashed, and optionally
-  signed during `egg build`.
+  signed with Ed25519 during `egg build`.
 - The manifest stores a chain of hashes and signatures for auditability.
 - Viewers verify the manifest and block hashes before executing any code.
 - Runtimes fetched from registries are pinned to specific hashes or signatures.
