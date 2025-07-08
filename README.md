@@ -1,7 +1,7 @@
 # 🥚 egg file format
 
-[![Coverage](https://img.shields.io/badge/coverage-100%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.39%2F10-green)](https://pylint.pycqa.org/)
+[![Coverage](https://img.shields.io/badge/coverage-99%25-cyan)](https://img.shields.io)
+[![Pylint](https://img.shields.io/badge/pylint-9.40%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -56,13 +56,13 @@ egg -vv --help  # shows "[plugins] loaded ..." messages
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
-egg hatch  --egg <egg> [--no-sandbox]
-egg verify --egg <egg> [--signing-key <file>]
-egg info   --egg <egg>
+egg build  --manifest <file> --output <egg> [--precompute] [--private-key <file>]
+egg hatch  --egg <egg> [--no-sandbox] [--public-key <file>]
+egg verify --egg <egg> [--public-key <file>]
+egg info   --egg <egg> [--public-key <file>]
 ```
 
-Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. The signing key for `hashes.yaml` can be changed with `--signing-key` or the `EGG_SIGNING_KEY` environment variable.
+Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. Keys for `hashes.yaml` can be supplied via `--private-key`/`--public-key` or the `EGG_PRIVATE_KEY`/`EGG_PUBLIC_KEY` environment variables.
 
 ### Testing
 

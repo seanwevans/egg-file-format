@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import hashlib
-import hmac
 import os
 from pathlib import Path
 from typing import Dict, Iterable
 
 import zipfile
+from nacl.signing import SigningKey, VerifyKey
+from nacl.exceptions import BadSignatureError
 
 try:
     import yaml
@@ -20,8 +21,35 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
 
 _CHUNK_SIZE = 8192
 
-# Simplified signing key for demonstration/testing purposes
-SIGNING_KEY = os.getenv("EGG_SIGNING_KEY", "egg-signing-key").encode()
+# Default private key seed for demonstration/testing purposes
+DEFAULT_PRIVATE_KEY = os.getenv("EGG_PRIVATE_KEY", "egg-signing-key").encode()
+
+
+def _signing_key(key: bytes | None = None) -> SigningKey:
+    """Return a ``SigningKey`` derived from ``key``."""
+    if key is None:
+        key = DEFAULT_PRIVATE_KEY
+    if len(key) != 32:
+        key = hashlib.sha256(key).digest()
+    return SigningKey(key)
+
+
+def _verify_key(key: bytes | None = None) -> VerifyKey:
+    """Return a ``VerifyKey`` derived from ``key``."""
+    if key is None:
+        env = os.getenv("EGG_PUBLIC_KEY")
+        if env is not None:
+            key = env.encode()
+        else:
+            return _signing_key().verify_key
+    if len(key) == 64:
+        try:
+            key = bytes.fromhex(key.decode())
+        except Exception:  # pragma: no cover - invalid hex
+            pass
+    if len(key) != 32:
+        key = hashlib.sha256(key).digest()
+    return VerifyKey(key)
 
 
 def sha256_file(path: Path) -> str:
@@ -94,12 +122,11 @@ def load_hashes(path: Path) -> Dict[str, str]:
     return data
 
 
-def sign_hashes(path: Path, *, key: bytes | None = None) -> str:
-    """Return an HMAC-SHA256 signature of ``path``."""
-    if key is None:
-        key = SIGNING_KEY
-    data = path.read_bytes()
-    return hmac.new(key, data, hashlib.sha256).hexdigest()
+def sign_hashes(path: Path, *, private_key: bytes | None = None) -> str:
+    """Return an Ed25519 signature of ``path``."""
+    sk = _signing_key(private_key)
+    signature = sk.sign(path.read_bytes()).signature
+    return signature.hex()
 
 
 def verify_hashes(directory: Path, hashes: Dict[str, str]) -> bool:
@@ -111,7 +138,7 @@ def verify_hashes(directory: Path, hashes: Dict[str, str]) -> bool:
     return True
 
 
-def verify_archive(archive: Path, *, key: bytes | None = None) -> bool:
+def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
     """Verify that files inside a ZIP ``archive`` match ``hashes.yaml``.
 
     Parameters
@@ -124,19 +151,19 @@ def verify_archive(archive: Path, *, key: bytes | None = None) -> bool:
     bool
         ``True`` if all files match their recorded digests, ``False`` otherwise.
     """
-    if key is None:
-        key = SIGNING_KEY
+    vk = _verify_key(public_key)
     with zipfile.ZipFile(archive) as zf:
         try:
             with zf.open("hashes.yaml") as f:
                 hashes_bytes = f.read()
             with zf.open("hashes.sig") as f:
-                signature = f.read().decode().strip()
+                signature = bytes.fromhex(f.read().decode().strip())
         except KeyError:
             return False
 
-        expected_sig = hmac.new(key, hashes_bytes, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(signature, expected_sig):
+        try:
+            vk.verify(hashes_bytes, signature)
+        except BadSignatureError:
             return False
 
         hashes = yaml.safe_load(hashes_bytes) or {}

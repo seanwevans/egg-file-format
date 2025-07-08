@@ -27,7 +27,7 @@ mechanisms built into the format and CLI tools.
 
 ### Integrity & Authenticity
 - All blocks and assets are deterministically chunked, hashed, and optionally
-  signed during `egg build`.
+  signed with Ed25519 during `egg build`.
 - The manifest stores a chain of hashes and signatures for auditability.
 - Viewers verify the manifest and block hashes before executing any code.
 - Runtimes fetched from registries are pinned to specific hashes or signatures.
