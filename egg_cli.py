@@ -18,7 +18,7 @@ from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
 from egg.precompute import precompute_cells
-from egg.utils import get_lang_command, load_plugins
+from egg.utils import DEFAULT_LANG_COMMANDS, get_lang_command, load_plugins
 
 
 __version__ = "0.1.0"
@@ -148,6 +148,13 @@ def info(args: argparse.Namespace) -> None:
             print(f"  {perm}: {val}")
 
 
+def languages(args: argparse.Namespace) -> None:
+    """Print supported language identifiers."""
+    load_plugins()
+    for lang in sorted(DEFAULT_LANG_COMMANDS):
+        print(lang)
+
+
 def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``egg`` command line interface."""
     if argv is None:  # pragma: no cover - convenience for __main__
@@ -246,6 +253,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Egg file to inspect",
     )
     parser_info.set_defaults(func=info)
+
+    parser_langs = subparsers.add_parser(
+        "languages", help="List supported languages", parents=[global_parser]
+    )
+    parser_langs.set_defaults(func=languages)
 
     args, _ = parser.parse_known_args(argv)
     extras, _ = global_parser.parse_known_args(argv)

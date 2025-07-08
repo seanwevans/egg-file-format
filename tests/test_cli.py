@@ -1127,3 +1127,11 @@ cells:
     assert "Author: Bob" in out
     assert "License: MIT" in out
     assert "Created: 2024-01-01" in out
+
+
+def test_languages_command(monkeypatch, capsys):
+    """The languages command should list plug-in languages."""
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "languages"])
+    egg_cli.main()
+    out = set(capsys.readouterr().out.splitlines())
+    assert {"python", "r", "bash", "ruby"} <= out
