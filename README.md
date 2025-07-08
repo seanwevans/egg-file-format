@@ -51,6 +51,45 @@ pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
+## Advanced Usage
+
+Egg discovers custom runtimes and agents via Python entry points. Add a
+`register()` function in your package and list it under the appropriate
+group in `pyproject.toml`:
+
+```toml
+[project.entry-points."egg.runtimes"]
+cool = "mypkg.cool_runtime:register"
+
+[project.entry-points."egg.agents"]
+extra = "mypkg.extra_agent:register"
+```
+
+Running `egg -vv --help` will confirm that these plug-ins loaded.
+
+The manifest `examples/advanced_manifest.yaml` demonstrates how to
+declare dependencies and enable permissions:
+
+```yaml
+name: "Advanced Notebook"
+description: "Example demonstrating dependencies, permissions, and mixed languages"
+dependencies:
+  - python:3.11
+  - r:4.3
+  - bash:5
+permissions:
+  network: true
+  filesystem: true
+```
+
+It runs Python, Bash and R cells from the `examples/` directory. Build
+and hatch it like so:
+
+```bash
+egg build --manifest examples/advanced_manifest.yaml --output advanced.egg --precompute
+egg hatch --egg advanced.egg
+```
+
 ---
 
 ## CLI Overview
