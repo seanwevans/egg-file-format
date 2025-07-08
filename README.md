@@ -102,7 +102,17 @@ egg verify --egg <egg> [--public-key <file>]
 egg info   --egg <egg> [--public-key <file>]
 ```
 
-Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. Keys for `hashes.yaml` can be supplied via `--private-key`/`--public-key` or the `EGG_PRIVATE_KEY`/`EGG_PUBLIC_KEY` environment variables.
+Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `EGG_CMD_PYTHON` | Command executed for Python cells |
+| `EGG_CMD_R` | Command executed for R cells |
+| `EGG_CMD_BASH` | Command executed for Bash cells |
+| `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
+| `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
 
 ### Testing
 
