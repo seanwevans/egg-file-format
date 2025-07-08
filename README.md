@@ -1,8 +1,8 @@
 # 🥚 egg file format
 
 
-[![Coverage](https://img.shields.io/badge/coverage-99%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.41%2F10-green)](https://pylint.pycqa.org/)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-cyan)](https://img.shields.io)
+[![Pylint](https://img.shields.io/badge/pylint-9.38%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -96,10 +96,11 @@ egg hatch --egg advanced.egg
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute] [--private-key <file>]
-egg hatch  --egg <egg> [--no-sandbox] [--public-key <file>]
-egg verify --egg <egg> [--public-key <file>]
-egg info   --egg <egg> [--public-key <file>]
+egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
+egg hatch  --egg <egg> [--no-sandbox]
+egg verify --egg <egg> [--signing-key <file>]
+egg info   --egg <egg>
+egg languages
 ```
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
