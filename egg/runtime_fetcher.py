@@ -14,6 +14,7 @@ import shutil
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
+import socket
 from pathlib import Path
 from typing import List
 
@@ -72,7 +73,11 @@ def _download_container(
     try:
         with urlopen(url, timeout=timeout) as resp, open(dest, "wb") as fh:
             shutil.copyfileobj(resp, fh)
-    except (HTTPError, URLError) as exc:  # pragma: no cover - network errors
+    except (
+        HTTPError,
+        URLError,
+        socket.timeout,
+    ) as exc:  # pragma: no cover - network errors
         raise RuntimeError(f"Failed to download {url}: {exc}") from exc
     return dest
 
