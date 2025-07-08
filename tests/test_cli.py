@@ -1127,3 +1127,25 @@ cells:
     assert "Author: Bob" in out
     assert "License: MIT" in out
     assert "Created: 2024-01-01" in out
+
+
+@pytest.mark.parametrize("system,expected", [("Linux", "runc"), ("Darwin", "docker")])
+def test_sandbox_launch_helpers(monkeypatch, tmp_path, system, expected):
+    from egg import sandboxer
+
+    (tmp_path / "microvm.json").write_text("{}")
+    (tmp_path / "container.json").write_text('{"language": "python"}')
+    calls = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(platform, "system", lambda: system)
+
+    sandboxer.launch_microvm(tmp_path)
+    sandboxer.launch_container(tmp_path)
+
+    assert any("firecracker" in c[0] for c in calls)
+    assert any(expected in c[0] for c in calls)

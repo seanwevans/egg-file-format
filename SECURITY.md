@@ -22,6 +22,9 @@ mechanisms built into the format and CLI tools.
   root filesystem.
 - During `egg hatch`, the sandboxer prepares a container image (or placeholder
   `microvm.conf` in this prototype) for every runtime.
+- Firecracker requires a Linux host with KVM enabled and the `firecracker`
+  binary installed. Non-Linux platforms automatically fall back to Docker
+  containers for isolation.
 - Passing `--no-sandbox` disables isolation and should only be used for testing
   trusted eggs.
 
