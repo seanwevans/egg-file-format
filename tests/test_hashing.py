@@ -1,5 +1,5 @@
 import hashlib
-import hmac
+from nacl.signing import SigningKey
 from pathlib import Path
 import zipfile
 
@@ -13,7 +13,7 @@ from egg.hashing import (
     verify_hashes,
     verify_archive,
     sign_hashes,
-    SIGNING_KEY,
+    DEFAULT_PRIVATE_KEY,
 )
 from egg.composer import compose
 
@@ -107,8 +107,9 @@ def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
 def test_sign_hashes_and_verify_signature(tmp_path: Path) -> None:
     data = tmp_path / "hashes.yaml"
     data.write_text("a: 1\n")
-    sig = sign_hashes(data, key=SIGNING_KEY)
-    expected = hmac.new(SIGNING_KEY, data.read_bytes(), hashlib.sha256).hexdigest()
+    sig = sign_hashes(data, private_key=DEFAULT_PRIVATE_KEY)
+    sk = SigningKey(hashlib.sha256(DEFAULT_PRIVATE_KEY).digest())
+    expected = sk.sign(data.read_bytes()).signature.hex()
     assert sig == expected
 
 
@@ -122,7 +123,7 @@ def test_verify_archive_bad_signature(tmp_path: Path) -> None:
 
     # Tamper signature
     with zipfile.ZipFile(output, "a") as zf:
-        zf.writestr("hashes.sig", "0" * 64)
+        zf.writestr("hashes.sig", "0" * 128)
 
     assert not verify_archive(output)
 
@@ -149,7 +150,7 @@ def test_verify_archive_missing_file(tmp_path: Path) -> None:
     hashes_path = tmp_path / "hashes.yaml"
     write_hashes_file(hashes, hashes_path)
     sig_path = tmp_path / "hashes.sig"
-    sig_path.write_text(sign_hashes(hashes_path, key=SIGNING_KEY))
+    sig_path.write_text(sign_hashes(hashes_path, private_key=DEFAULT_PRIVATE_KEY))
     archive = tmp_path / "demo.egg"
     with zipfile.ZipFile(archive, "w") as zf:
         for path in [foo, hashes_path, sig_path]:
@@ -187,7 +188,7 @@ def test_hashing_import_guard(monkeypatch):
 
 
 def test_sign_hashes_env_override(monkeypatch, tmp_path):
-    """Setting EGG_SIGNING_KEY changes the produced signature."""
+    """Setting EGG_PRIVATE_KEY changes the produced signature."""
     import importlib
     import egg.hashing as hashing
 
@@ -196,22 +197,25 @@ def test_sign_hashes_env_override(monkeypatch, tmp_path):
 
     default_sig = hashing.sign_hashes(data)
 
-    monkeypatch.setenv("EGG_SIGNING_KEY", "new-key")
+    monkeypatch.setenv("EGG_PRIVATE_KEY", "new-key")
     hashing = importlib.reload(hashing)
 
     sig = hashing.sign_hashes(data)
-    expected = hmac.new(b"new-key", data.read_bytes(), hashlib.sha256).hexdigest()
+    sk = SigningKey(hashlib.sha256(b"new-key").digest())
+    expected = sk.sign(data.read_bytes()).signature.hex()
 
     assert sig == expected
     assert sig != default_sig
 
 
 def test_verify_archive_env_key(monkeypatch, tmp_path):
-    """Verification should honor EGG_SIGNING_KEY."""
+    """Verification should honor EGG_PUBLIC_KEY."""
     import importlib
     import egg.hashing as hashing
 
-    monkeypatch.setenv("EGG_SIGNING_KEY", "secret")
+    sk = SigningKey(hashlib.sha256(b"secret").digest())
+    monkeypatch.setenv("EGG_PRIVATE_KEY", "secret")
+    monkeypatch.setenv("EGG_PUBLIC_KEY", sk.verify_key.encode().hex())
     hashing = importlib.reload(hashing)
 
     foo = tmp_path / "foo.txt"
@@ -235,7 +239,8 @@ def test_verify_archive_env_key(monkeypatch, tmp_path):
     assert hashing.verify_archive(archive)
 
     # Wrong key should fail verification
-    monkeypatch.setenv("EGG_SIGNING_KEY", "other")
+    other_vk = SigningKey(hashlib.sha256(b"other").digest()).verify_key.encode().hex()
+    monkeypatch.setenv("EGG_PUBLIC_KEY", other_vk)
     hashing = importlib.reload(hashing)
     assert not hashing.verify_archive(archive)
 

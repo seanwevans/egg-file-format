@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 import subprocess
 import tempfile
+import platform
 import pytest  # noqa: F401
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -20,7 +21,10 @@ from egg.manifest import Manifest, Cell  # noqa: E402
 def test_build_microvm_image(tmp_path: Path) -> None:
     build_microvm_image("python", tmp_path)
     assert (tmp_path / "microvm.json").is_file()
-    assert (tmp_path / "microvm.conf").read_text().startswith("language: python")
+    conf = (tmp_path / "microvm.conf").read_text()
+    assert conf.startswith("language: python")
+    assert (tmp_path / "vmlinux").is_file()
+    assert (tmp_path / "rootfs.ext4").is_file()
 
 
 def test_launch_microvm(monkeypatch, tmp_path: Path):
@@ -52,8 +56,9 @@ def test_launch_container(monkeypatch, tmp_path: Path):
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
     result = launch_container(tmp_path)
-    assert called and "docker" in called[0][0]
+    assert called and "runc" in called[0][0]
     assert result.returncode == 0
 
 

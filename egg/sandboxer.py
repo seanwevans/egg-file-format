@@ -33,11 +33,11 @@ def check_platform() -> None:
 
 
 def build_microvm_image(language: str, dest: Path) -> None:
-    """Create a placeholder Firecracker micro-VM image for ``language``.
+    """Create a minimal Firecracker micro-VM image for ``language``.
 
-    A ``microvm.json`` configuration file identifying the runtime is written
-    inside ``dest``.  Future versions will build an actual VM image with a
-    kernel and root filesystem.
+    This writes a ``microvm.json`` configuration plus placeholder ``vmlinux``
+    and ``rootfs.ext4`` files.  The resulting directory can be booted via
+    :func:`launch_microvm`.
 
     Parameters
     ----------
@@ -48,15 +48,36 @@ def build_microvm_image(language: str, dest: Path) -> None:
     """
 
     dest.mkdir(parents=True, exist_ok=True)
+
+    kernel = dest / "vmlinux"
+    kernel.touch()
+    rootfs = dest / "rootfs.ext4"
+    with open(rootfs, "wb") as f:
+        f.truncate(1 * 1024 * 1024)  # 1MiB placeholder
+
     config = {
-        "language": language,
-        "vm_type": "firecracker",
+        "boot-source": {
+            "kernel_image_path": str(kernel),
+            "boot_args": f"console=ttyS0 init=/usr/bin/{language}",
+        },
+        "drives": [
+            {
+                "drive_id": "rootfs",
+                "path_on_host": str(rootfs),
+                "is_root_device": True,
+                "is_read_only": False,
+            }
+        ],
     }
+
     conf_json = dest / "microvm.json"
     conf_json.write_text(json.dumps(config), encoding="utf-8")
     conf_yaml = dest / "microvm.conf"
-    conf_yaml.write_text(f"language: {language}\n", encoding="utf-8")
-    logger.debug("[sandboxer] wrote %s and %s", conf_json, conf_yaml)
+    conf_yaml.write_text(
+        f"language: {language}\nkernel: {kernel.name}\nrootfs: {rootfs.name}\n",
+        encoding="utf-8",
+    )
+    logger.debug("[sandboxer] wrote %s, %s and %s", conf_json, kernel, rootfs)
 
 
 def build_container_image(language: str, dest: Path) -> None:
@@ -128,15 +149,25 @@ def launch_microvm(image_dir: Path) -> subprocess.CompletedProcess:
         The result object from :func:`subprocess.run`.
     """
     config = image_dir / "microvm.json"
-    cmd = ["firecracker", "--config-file", str(config)]
+    cmd = ["firecracker", "--no-api", "--config-file", str(config)]
     logger.info("[sandboxer] launching Firecracker: %s", " ".join(cmd))
     return subprocess.run(cmd, check=True)
 
 
 def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
-    """Launch a container using ``image_dir/container.json``."""
+    """Launch a container using ``image_dir/container.json``.
+
+    On Linux this uses ``runc`` directly.  Other platforms fall back to Docker
+    since Firecracker and OCI runtimes are typically unavailable.
+    """
 
     config = image_dir / "container.json"
-    cmd = ["docker", "run", json.loads(config.read_text())["language"]]
+    language = json.loads(config.read_text())["language"]
+
+    if platform.system() == "Linux":
+        cmd = ["runc", "run", language]
+    else:
+        cmd = ["docker", "run", language]
+
     logger.info("[sandboxer] launching container: %s", " ".join(cmd))
     return subprocess.run(cmd, check=True)

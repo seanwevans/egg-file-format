@@ -5,6 +5,7 @@ import io
 
 import pytest
 import urllib.error
+import socket
 import egg.runtime_fetcher as runtime_fetcher
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -251,5 +252,61 @@ dependencies:
     monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
     with pytest.raises(
         RuntimeError, match=r"http://example.com/python%3A3.11.img.*boom"
+    ):
+        fetch_runtime_blocks(manifest)
+
+
+def test_registry_http_error(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+
+    def fail(url, *, timeout=None):
+        assert timeout == 30.0
+        raise urllib.error.HTTPError(url, 404, "nope", None, None)
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
+    with pytest.raises(
+        RuntimeError, match=r"http://example.com/python%3A3.11.img.*nope"
+    ):
+        fetch_runtime_blocks(manifest)
+
+
+def test_registry_timeout(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+
+    def fail(url, *, timeout=None):
+        assert timeout == 30.0
+        raise socket.timeout("too slow")
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
+    with pytest.raises(
+        RuntimeError, match=r"http://example.com/python%3A3.11.img.*too slow"
     ):
         fetch_runtime_blocks(manifest)

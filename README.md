@@ -1,5 +1,6 @@
 # 🥚 egg file format
 
+
 [![Coverage](https://img.shields.io/badge/coverage-100%25-cyan)](https://img.shields.io)
 [![Pylint](https://img.shields.io/badge/pylint-9.38%2F10-green)](https://pylint.pycqa.org/)
 
@@ -51,6 +52,45 @@ pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
+## Advanced Usage
+
+Egg discovers custom runtimes and agents via Python entry points. Add a
+`register()` function in your package and list it under the appropriate
+group in `pyproject.toml`:
+
+```toml
+[project.entry-points."egg.runtimes"]
+cool = "mypkg.cool_runtime:register"
+
+[project.entry-points."egg.agents"]
+extra = "mypkg.extra_agent:register"
+```
+
+Running `egg -vv --help` will confirm that these plug-ins loaded.
+
+The manifest `examples/advanced_manifest.yaml` demonstrates how to
+declare dependencies and enable permissions:
+
+```yaml
+name: "Advanced Notebook"
+description: "Example demonstrating dependencies, permissions, and mixed languages"
+dependencies:
+  - python:3.11
+  - r:4.3
+  - bash:5
+permissions:
+  network: true
+  filesystem: true
+```
+
+It runs Python, Bash and R cells from the `examples/` directory. Build
+and hatch it like so:
+
+```bash
+egg build --manifest examples/advanced_manifest.yaml --output advanced.egg --precompute
+egg hatch --egg advanced.egg
+```
+
 ---
 
 ## CLI Overview
@@ -63,7 +103,17 @@ egg info   --egg <egg>
 egg languages
 ```
 
-Use `egg <command> -h` to see all options. Runtime commands can be overridden with `EGG_CMD_PYTHON`, `EGG_CMD_R`, or `EGG_CMD_BASH`. The signing key for `hashes.yaml` can be changed with `--signing-key` or the `EGG_SIGNING_KEY` environment variable.
+Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `EGG_CMD_PYTHON` | Command executed for Python cells |
+| `EGG_CMD_R` | Command executed for R cells |
+| `EGG_CMD_BASH` | Command executed for Bash cells |
+| `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
+| `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
 
 ### Testing
 

@@ -1,4 +1,5 @@
 PyYAML
+PyNaCl
 pytest
 pytest-cov
 pre-commit
