@@ -9,7 +9,7 @@ authors = [{ name = "egg contributors" }]
 readme = "README.md"
 description = "CLI tools for the egg file format"
 requires-python = ">=3.8"
-dependencies = ["PyYAML>=6"]
+dependencies = ["PyYAML>=6", "PyNaCl>=1.5"]
 license = "MIT"
 
 [project.scripts]

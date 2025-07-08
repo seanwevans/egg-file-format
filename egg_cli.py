@@ -13,7 +13,7 @@ from egg.constants import SUPPORTED_PLATFORMS
 from pathlib import Path
 
 from egg.composer import compose
-from egg.hashing import verify_archive
+from egg.hashing import verify_archive, _signing_key
 from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
@@ -48,13 +48,19 @@ def build(args: argparse.Namespace) -> None:
     if args.precompute:
         precompute_cells(manifest)
 
-    key: bytes | None = None
-    if args.signing_key:
-        key = Path(args.signing_key).read_bytes()
+    priv: bytes | None = None
+    if args.private_key:
+        priv = Path(args.private_key).read_bytes()
 
-    compose(manifest, output, dependencies=deps, signing_key=key)
+    pub: bytes | None = None
+    if args.public_key:
+        pub = Path(args.public_key).read_bytes()
+    elif priv is not None:
+        pub = _signing_key(priv).verify_key.encode()
 
-    if not verify_archive(output, key=key):
+    compose(manifest, output, dependencies=deps, private_key=priv)
+
+    if not verify_archive(output, public_key=pub):
         output.unlink(missing_ok=True)
         raise SystemExit("Hash verification failed")
 
@@ -66,7 +72,11 @@ def hatch(args: argparse.Namespace) -> None:
     egg_path = Path(args.egg)
     if not egg_path.is_file():
         raise SystemExit(f"Egg file not found: {egg_path}")
-    if not verify_archive(egg_path):
+    pub: bytes | None = None
+    if args.public_key:
+        pub = Path(args.public_key).read_bytes()
+
+    if not verify_archive(egg_path, public_key=pub):
         raise SystemExit("Hash verification failed")
 
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
@@ -101,11 +111,11 @@ def verify(args: argparse.Namespace) -> None:
     if not egg_path.is_file():
         raise SystemExit(f"Egg file not found: {egg_path}")
 
-    key: bytes | None = None
-    if args.signing_key:
-        key = Path(args.signing_key).read_bytes()
+    pub: bytes | None = None
+    if args.public_key:
+        pub = Path(args.public_key).read_bytes()
 
-    if verify_archive(egg_path, key=key):
+    if verify_archive(egg_path, public_key=pub):
         logger.info("[verify] %s verified successfully", egg_path)
     else:
         raise SystemExit("Hash verification failed")
@@ -117,7 +127,11 @@ def info(args: argparse.Namespace) -> None:
     if not egg_path.is_file():
         raise SystemExit(f"Egg file not found: {egg_path}")
 
-    if not verify_archive(egg_path):
+    pub: bytes | None = None
+    if args.public_key:
+        pub = Path(args.public_key).read_bytes()
+
+    if not verify_archive(egg_path, public_key=pub):
         raise SystemExit("Hash verification failed")
 
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
@@ -205,8 +219,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Execute cells and store outputs before composing",
     )
     parser_build.add_argument(
-        "--signing-key",
-        help="Path to signing key file",
+        "--private-key",
+        help="Path to Ed25519 private key file",
+    )
+    parser_build.add_argument(
+        "--public-key",
+        help="Public key file used for verification",
     )
     parser_build.set_defaults(func=build)
 
@@ -218,6 +236,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser_hatch.add_argument(
         "--no-sandbox", action="store_true", help="Run without sandbox (unsafe)"
+    )
+    parser_hatch.add_argument(
+        "--public-key", help="Public key file for signature verification"
     )
     parser_hatch.set_defaults(func=hatch)
 
@@ -231,8 +252,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Egg file to verify",
     )
     parser_verify.add_argument(
-        "--signing-key",
-        help="Path to signing key file",
+        "--public-key",
+        help="Public key file for signature verification",
     )
     parser_verify.set_defaults(func=verify)
 
@@ -244,6 +265,10 @@ def main(argv: list[str] | None = None) -> None:
         "--egg",
         default="out.egg",
         help="Egg file to inspect",
+    )
+    parser_info.add_argument(
+        "--public-key",
+        help="Public key file for signature verification",
     )
     parser_info.set_defaults(func=info)
 
