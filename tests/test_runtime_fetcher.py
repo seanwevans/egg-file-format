@@ -310,3 +310,91 @@ dependencies:
         RuntimeError, match=r"http://example.com/python%3A3.11.img.*too slow"
     ):
         fetch_runtime_blocks(manifest)
+
+
+def test_download_timeout_default(monkeypatch, tmp_path: Path) -> None:
+    """Without ``EGG_DOWNLOAD_TIMEOUT`` the default should be 30s."""
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+    monkeypatch.delenv("EGG_DOWNLOAD_TIMEOUT", raising=False)
+
+    def fail(url, *, timeout=None):
+        assert timeout == 30.0
+        raise urllib.error.URLError("boom")
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
+    with pytest.raises(RuntimeError):
+        fetch_runtime_blocks(manifest)
+
+
+def test_download_timeout_override(monkeypatch, tmp_path: Path) -> None:
+    """``EGG_DOWNLOAD_TIMEOUT`` should override the default."""
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+    monkeypatch.setenv("EGG_DOWNLOAD_TIMEOUT", "12.5")
+
+    class Dummy(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    def succeed(url, *, timeout=None):
+        assert timeout == 12.5
+        return Dummy(b"ok")
+
+    monkeypatch.setattr(runtime_fetcher, "urlopen", succeed)
+    paths = fetch_runtime_blocks(manifest)
+    expected = tmp_path / "python_3.11.img"
+    assert paths == [expected]
+    assert expected.read_bytes() == b"ok"
+
+
+def test_download_timeout_invalid(monkeypatch, tmp_path: Path) -> None:
+    """Invalid ``EGG_DOWNLOAD_TIMEOUT`` values should raise ``ValueError``."""
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+    monkeypatch.setenv("EGG_DOWNLOAD_TIMEOUT", "not-a-number")
+
+    with pytest.raises(ValueError, match="EGG_DOWNLOAD_TIMEOUT"):
+        fetch_runtime_blocks(manifest)

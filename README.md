@@ -118,6 +118,7 @@ The `clean` command removes `precompute_hashes.yaml`, `*.out` files, and any `sa
 | `EGG_CMD_BASH` | Command executed for Bash cells |
 | `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
 | `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
+| `EGG_DOWNLOAD_TIMEOUT` | Default timeout (seconds) for runtime downloads |
 
 ### Testing
 

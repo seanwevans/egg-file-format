@@ -42,14 +42,16 @@ def _get_registry_url() -> str | None:
 
 
 def _download_container(
-    image: str, dest: Path, base_url: str, timeout: float = 30.0
+    image: str, dest: Path, base_url: str, timeout: float | None = None
 ) -> Path:
     """Download ``image`` from ``base_url`` to ``dest``.
 
     Parameters
     ----------
     timeout : float, optional
-        Socket timeout passed to ``urlopen``.
+        Socket timeout passed to ``urlopen``. Defaults to the value of
+        ``EGG_DOWNLOAD_TIMEOUT`` if set, otherwise ``30.0``. Invalid
+        environment values raise ``ValueError``.
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
@@ -57,6 +59,16 @@ def _download_container(
     ``RuntimeError`` is raised with the failing URL and original
     exception.
     """
+
+    if timeout is None:
+        env_timeout = os.getenv("EGG_DOWNLOAD_TIMEOUT")
+        if env_timeout:
+            try:
+                timeout = float(env_timeout)
+            except ValueError as exc:  # pragma: no cover - invalid env
+                raise ValueError("EGG_DOWNLOAD_TIMEOUT must be a number") from exc
+        else:
+            timeout = 30.0
 
     manifest_dir = dest.parent.resolve()
     dest = dest.resolve(strict=False)
