@@ -37,37 +37,52 @@ egg clean .
 
 For a Julia example see `examples/julia_manifest.yaml`.
 A full manifest mixing twelve languages is provided in `examples/dozen_manifest.yaml`.
+The example plug-ins used above are described in [AGENTS.md](AGENTS.md#plug-in-development).
 
 ## Writing Plug-ins
 
-Egg can be extended with custom Python modules. Implement a `register()`
-function that either returns runtime commands or performs agent side effects.
-Declare the module under `egg.runtimes` or `egg.agents` in
-`pyproject.toml`. See [examples/](examples/) for sample plug-ins.
+Egg can be extended with custom Python packages. Each plug-in exposes a
+`register()` function and is distributed like any other package:
+
+```
+my-egg-plugin/
+├── pyproject.toml
+└── my_pkg/
+    ├── __init__.py
+    ├── runtime.py      # runtime plug-in
+    └── hello_agent.py  # agent plug-in
+```
+
+Place the `register()` function in the module referenced by your entry
+point. A minimal `pyproject.toml` looks like:
+
+```toml
+[project.entry-points."egg.runtimes"]
+python = "my_pkg.runtime:register"
+
+[project.entry-points."egg.agents"]
+hello = "my_pkg.hello_agent:register"
+```
+
+At start-up the CLI calls `egg.utils.load_plugins()`, which scans the
+`egg.runtimes` and `egg.agents` entry point groups, imports each module
+and invokes its `register()` function. Runtime plug-ins return a mapping
+of language names to command lists, while agent plug-ins run for their
+side effects.
 
 Install your plug-in like any other package and run the CLI with the
-``-vv`` flag to confirm it loads:
+`-vv` flag to confirm it loads:
 
 ```bash
 pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
+See [examples/](examples/) for sample plug-ins and
+[AGENTS.md](AGENTS.md#plug-in-development) for more on agent architecture
+and plug-in development.
+
 ## Advanced Usage
-
-Egg discovers custom runtimes and agents via Python entry points. Add a
-`register()` function in your package and list it under the appropriate
-group in `pyproject.toml`:
-
-```toml
-[project.entry-points."egg.runtimes"]
-cool = "mypkg.cool_runtime:register"
-
-[project.entry-points."egg.agents"]
-extra = "mypkg.extra_agent:register"
-```
-
-Running `egg -vv --help` will confirm that these plug-ins loaded.
 
 The manifest `examples/advanced_manifest.yaml` demonstrates how to
 declare dependencies and enable permissions:
