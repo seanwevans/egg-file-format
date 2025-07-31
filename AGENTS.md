@@ -69,6 +69,12 @@ pre-commit run --all-files
 These commands format the code, perform static analysis and run the test suite.
 Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for details on style guidelines.
 
+### Cleaning Artifacts
+
+Use `egg clean [path] [--dry-run]` to delete `precompute_hashes.yaml`, `*.out`
+files, and any `sandbox` directories beneath a path. Pass `--dry-run` to show
+targets without removing them.
+
 ### Plug-in Development
 
 Egg's functionality can be extended through Python entry points. Create a
