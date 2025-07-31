@@ -2,7 +2,7 @@
 
 
 [![Coverage](https://img.shields.io/badge/coverage-99%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.40%2F10-green)](https://pylint.pycqa.org/)
+[![Pylint](https://img.shields.io/badge/pylint-9.42%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -32,6 +32,7 @@ egg build --manifest examples/manifest.yaml --output demo.egg --precompute
 egg hatch --egg demo.egg
 egg verify --egg demo.egg
 egg info --egg demo.egg
+egg clean .
 ```
 
 For a Julia example see `examples/julia_manifest.yaml`.
@@ -101,9 +102,12 @@ egg hatch  --egg <egg> [--no-sandbox]
 egg verify --egg <egg> [--signing-key <file>]
 egg info   --egg <egg>
 egg languages
+egg clean  [path] [--dry-run]
 ```
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
+
+The `clean` command removes `precompute_hashes.yaml`, `*.out` files, and any `sandbox` directories beneath the given path. Use `--dry-run` to list targets without deleting them.
 
 ### Environment Variables
 

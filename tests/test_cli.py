@@ -1162,3 +1162,45 @@ def test_sandbox_launch_helpers(monkeypatch, tmp_path, system, expected):
 
     assert any("firecracker" in c[0] for c in calls)
     assert any(expected in c[0] for c in calls)
+
+
+def test_clean_removes_artifacts(monkeypatch, tmp_path, caplog):
+    target_dir = tmp_path / "work"
+    target_dir.mkdir()
+    (target_dir / "precompute_hashes.yaml").write_text("{}")
+    (target_dir / "result.out").write_text("hi")
+    sb = target_dir / "sandbox"
+    sb.mkdir()
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys, "argv", ["egg_cli.py", "--verbose", "clean", str(target_dir)]
+    )
+    egg_cli.main()
+
+    assert not (target_dir / "precompute_hashes.yaml").exists()
+    assert not (target_dir / "result.out").exists()
+    assert not sb.exists()
+    assert "[clean] Removed" in caplog.text
+
+
+def test_clean_dry_run(monkeypatch, tmp_path, caplog):
+    target_dir = tmp_path / "work"
+    target_dir.mkdir()
+    (target_dir / "precompute_hashes.yaml").write_text("{}")
+    (target_dir / "result.out").write_text("hi")
+    sb = target_dir / "sandbox"
+    sb.mkdir()
+
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["egg_cli.py", "--verbose", "clean", "--dry-run", str(target_dir)],
+    )
+    egg_cli.main()
+
+    assert (target_dir / "precompute_hashes.yaml").exists()
+    assert (target_dir / "result.out").exists()
+    assert sb.exists()
+    assert "Would remove" in caplog.text

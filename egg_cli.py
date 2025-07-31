@@ -162,6 +162,28 @@ def info(args: argparse.Namespace) -> None:
             print(f"  {perm}: {val}")
 
 
+def clean(args: argparse.Namespace) -> None:
+    """Remove build artifacts under a path."""
+    root = Path(args.path)
+    if not root.exists():
+        raise SystemExit(f"Path not found: {root}")
+
+    targets: set[Path] = set()
+    targets.update(root.rglob("precompute_hashes.yaml"))
+    targets.update(root.rglob("*.out"))
+    targets.update(p for p in root.rglob("sandbox") if p.is_dir())
+
+    for path in sorted(targets):
+        if args.dry_run:
+            logger.info("[clean] Would remove %s", path)
+        else:
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+            logger.info("[clean] Removed %s", path)
+
+
 def languages(args: argparse.Namespace) -> None:
     """Print supported language identifiers."""
     load_plugins()
@@ -283,6 +305,17 @@ def main(argv: list[str] | None = None) -> None:
         "languages", help="List supported languages", parents=[global_parser]
     )
     parser_langs.set_defaults(func=languages)
+
+    parser_clean = subparsers.add_parser(
+        "clean", help="Remove build artifacts", parents=[global_parser]
+    )
+    parser_clean.add_argument(
+        "path", nargs="?", default=".", help="Path to scan for artifacts"
+    )
+    parser_clean.add_argument(
+        "--dry-run", action="store_true", help="List files without removing"
+    )
+    parser_clean.set_defaults(func=clean)
 
     args, _ = parser.parse_known_args(argv)
     extras, _ = global_parser.parse_known_args(argv)
