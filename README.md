@@ -2,7 +2,7 @@
 
 
 [![Coverage](https://img.shields.io/badge/coverage-99%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.40%2F10-green)](https://pylint.pycqa.org/)
+[![Pylint](https://img.shields.io/badge/pylint-9.41%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
@@ -114,6 +114,7 @@ Use `egg <command> -h` to see all options. Runtime commands and other settings c
 | `EGG_CMD_BASH` | Command executed for Bash cells |
 | `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
 | `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
+| `EGG_DOWNLOAD_TIMEOUT` | Default timeout (seconds) for runtime downloads |
 
 ### Testing
 
