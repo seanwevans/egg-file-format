@@ -167,6 +167,11 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
             return False
 
         hashes = yaml.safe_load(hashes_bytes) or {}
+        if not isinstance(hashes, dict):
+            raise ValueError("hashes.yaml must contain a mapping")
+        for key, value in hashes.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                raise ValueError("hashes.yaml keys and values must be strings")
 
         for name, expected in hashes.items():
             try:
