@@ -162,7 +162,15 @@ def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
     """
 
     config = image_dir / "container.json"
-    language = json.loads(config.read_text())["language"]
+    if not config.is_file():
+        raise ValueError(f"missing container.json in {image_dir}")
+    try:
+        data = json.loads(config.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid container.json in {image_dir}") from exc
+    if "language" not in data:
+        raise ValueError(f"container.json missing 'language' key in {image_dir}")
+    language = data["language"]
 
     if platform.system() == "Linux":
         cmd = ["runc", "run", language]
