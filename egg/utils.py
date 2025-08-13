@@ -1,6 +1,6 @@
-from __future__ import annotations
+"""Utilities for path checks, language command lookup, and plug-in loading via entry points."""
 
-"""Utility helpers used across the egg codebase."""
+from __future__ import annotations
 
 from pathlib import Path
 import os
