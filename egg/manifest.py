@@ -98,9 +98,11 @@ def load_manifest(path: Path | str) -> Manifest:
             raise ValueError("'permissions' must be a mapping")
         permissions = {}
         for perm, val in permissions_data.items():
+            if not isinstance(perm, str):
+                raise ValueError(f"Permission key {perm!r} must be a string")
             if not isinstance(val, bool):
                 raise ValueError(f"Permission '{perm}' must be a boolean")
-            permissions[str(perm)] = val
+            permissions[perm] = val
 
     deps_data = data.get("dependencies")
     dependencies: List[str] | None

@@ -251,6 +251,23 @@ cells:
         load_manifest(path)
 
 
+def test_permission_key_must_be_string(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+permissions:
+  123: true
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError, match="Permission key 123 must be a string"):
+        load_manifest(path)
+
+
 def test_manifest_with_dependencies(tmp_path: Path) -> None:
     path = tmp_path / "manifest.yaml"
     path.write_text(
