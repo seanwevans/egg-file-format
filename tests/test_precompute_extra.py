@@ -40,7 +40,7 @@ cells:
 
     calls = []
 
-    def fake_run(cmd, check=True, stdout=None):
+    def fake_run(cmd, stdout=None, **kwargs):
         calls.append(cmd)
         if stdout:
             stdout.write("output\n")
@@ -88,6 +88,33 @@ cells:
         precompute_cells(manifest)
 
 
+def test_precompute_cells_subprocess_failure(monkeypatch, tmp_path: Path) -> None:
+    src = tmp_path / "hello.py"
+    src.write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: hello.py
+"""
+    )
+
+    def fake_run(cmd, stdout=None, **kwargs):
+        return subprocess.CompletedProcess(cmd, 1, stderr="boom")
+
+    monkeypatch.setattr(shutil, "which", lambda c: c)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError) as exc:
+        precompute_cells(manifest)
+    msg = str(exc.value)
+    assert str(src) in msg
+    assert "boom" in msg
+
+
 def _write_manifest(path: Path) -> Path:
     path.write_text(
         """
@@ -108,7 +135,7 @@ def test_precompute_caches_results(monkeypatch, tmp_path: Path) -> None:
 
     calls: list[list[str]] = []
 
-    def fake_run(cmd, check=True, stdout=None):
+    def fake_run(cmd, stdout=None, **kwargs):
         calls.append(cmd)
         if stdout:
             stdout.write("out1\n")
@@ -141,7 +168,7 @@ def test_precompute_cache_invalidated(monkeypatch, tmp_path: Path) -> None:
 
     calls: list[list[str]] = []
 
-    def fake_run(cmd, check=True, stdout=None):
+    def fake_run(cmd, stdout=None, **kwargs):
         calls.append(cmd)
         if stdout:
             stdout.write("out\n")

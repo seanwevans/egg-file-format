@@ -46,7 +46,14 @@ def precompute_cells(manifest_path: Path | str) -> List[Path]:
             outputs.append(out_file)
             continue
         with open(out_file, "w", encoding="utf-8") as out:
-            subprocess.run(cmd + [str(src)], check=True, stdout=out)
+            proc = subprocess.run(
+                cmd + [str(src)],
+                stdout=out,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        if proc.returncode != 0:
+            raise RuntimeError(f"Failed to precompute {src}:\n{proc.stderr}")
         outputs.append(out_file)
 
     write_hashes_file(new_hashes, cache_path)
