@@ -85,6 +85,14 @@ def test_load_hashes_non_string_value(tmp_path: Path) -> None:
         load_hashes(path)
 
 
+def test_load_hashes_non_string_key(tmp_path: Path) -> None:
+    """Non-string hash keys should raise ValueError."""
+    path = tmp_path / "hashes.yaml"
+    path.write_text("1: foo\n")
+    with pytest.raises(ValueError):
+        load_hashes(path)
+
+
 def test_verify_archive_with_extra_file(tmp_path: Path) -> None:
     """Archives containing files not listed in hashes.yaml should fail."""
     output = tmp_path / "demo.egg"
@@ -160,6 +168,28 @@ def test_verify_archive_missing_file(tmp_path: Path) -> None:
             with open(path, "rb") as f:
                 zf.writestr(zi, f.read())
     assert not verify_archive(archive)
+
+
+@pytest.mark.parametrize(
+    "content",
+    ["- a\n- b\n", "foo: 1\n", "1: foo\n"],
+)
+def test_verify_archive_invalid_hashes_yaml(tmp_path: Path, content: str) -> None:
+    """Invalid hashes.yaml content should raise ValueError."""
+    hashes_path = tmp_path / "hashes.yaml"
+    hashes_path.write_text(content)
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(sign_hashes(hashes_path, private_key=DEFAULT_PRIVATE_KEY))
+    archive = tmp_path / "demo.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for path in [hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as f:
+                zf.writestr(zi, f.read())
+    with pytest.raises(ValueError):
+        verify_archive(archive)
 
 
 def test_hashing_import_guard(monkeypatch):
