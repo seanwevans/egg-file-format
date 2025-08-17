@@ -10,7 +10,7 @@ import tempfile
 import zipfile
 import platform
 from egg.constants import SUPPORTED_PLATFORMS
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from egg.composer import compose
 from egg.hashing import verify_archive, _signing_key
@@ -80,6 +80,10 @@ def hatch(args: argparse.Namespace) -> None:
         raise SystemExit("Hash verification failed")
 
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
+        for name in zf.namelist():
+            p = PurePosixPath(name)
+            if p.is_absolute() or ".." in p.parts:
+                raise SystemExit(f"Unsafe path in archive: {name}")
         zf.extractall(tmpdir)
         manifest_path = Path(tmpdir) / "manifest.yaml"
         manifest = load_manifest(manifest_path)
