@@ -46,7 +46,7 @@ def build(args: argparse.Namespace) -> None:
     deps = fetch_runtime_blocks(manifest)
 
     if args.precompute:
-        precompute_cells(manifest)
+        precompute_cells(manifest, timeout=args.precompute_timeout)
 
     priv: bytes | None = None
     if args.private_key:
@@ -246,6 +246,12 @@ def main(argv: list[str] | None = None) -> None:
         "--precompute",
         action="store_true",
         help="Execute cells and store outputs before composing",
+    )
+    parser_build.add_argument(
+        "--precompute-timeout",
+        type=float,
+        default=None,
+        help="Timeout in seconds for each precomputed cell",
     )
     parser_build.add_argument(
         "--private-key",
