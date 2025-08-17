@@ -82,15 +82,22 @@ def _download_container(
 
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
+    tmp = dest.with_suffix(".tmp")
     try:
-        with urlopen(url, timeout=timeout) as resp, open(dest, "wb") as fh:
+        with urlopen(url, timeout=timeout) as resp, open(tmp, "wb") as fh:
             shutil.copyfileobj(resp, fh)
     except (
         HTTPError,
         URLError,
         socket.timeout,
     ) as exc:  # pragma: no cover - network errors
+        tmp.unlink(missing_ok=True)
         raise RuntimeError(f"Failed to download {url}: {exc}") from exc
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
+    else:
+        tmp.replace(dest)
     return dest
 
 
