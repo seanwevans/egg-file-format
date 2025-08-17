@@ -66,8 +66,24 @@ def load_plugins() -> None:
         try:
             handler = ep.load()
             extra = handler()
-            if isinstance(extra, dict):
-                DEFAULT_LANG_COMMANDS.update(extra)
+            if not isinstance(extra, dict):
+                logger.warning(
+                    "Runtime plug-in %s returned non-mapping %r", ep.name, type(extra)
+                )
+            else:
+                for lang, cmd in extra.items():
+                    if not (
+                        isinstance(lang, str)
+                        and isinstance(cmd, list)
+                        and all(isinstance(c, str) for c in cmd)
+                    ):
+                        logger.warning(
+                            "Runtime plug-in %s returned invalid mapping for %r",
+                            ep.name,
+                            lang,
+                        )
+                        continue
+                    DEFAULT_LANG_COMMANDS[lang] = cmd
             logger.debug("[plugins] loaded runtime %s", ep.name)
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading runtime plug-in %s: %s", ep.name, exc)
