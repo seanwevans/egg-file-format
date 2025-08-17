@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Dict, Iterable
 
 import zipfile
@@ -153,6 +153,10 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
     """
     vk = _verify_key(public_key)
     with zipfile.ZipFile(archive) as zf:
+        for name in zf.namelist():
+            p = PurePosixPath(name)
+            if p.is_absolute() or ".." in p.parts:
+                return False
         try:
             with zf.open("hashes.yaml") as f:
                 hashes_bytes = f.read()
