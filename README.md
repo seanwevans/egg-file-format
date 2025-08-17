@@ -2,7 +2,7 @@
 
 
 [![Coverage](https://img.shields.io/badge/coverage-99%25-cyan)](https://img.shields.io)
-[![Pylint](https://img.shields.io/badge/pylint-9.52%2F10-green)](https://pylint.pycqa.org/)
+[![Pylint](https://img.shields.io/badge/pylint-9.53%2F10-green)](https://pylint.pycqa.org/)
 
 **egg** is a self-contained, portable, and executable document format for reproducible code, data, and results. Inspired by the egg metaphor—slow to build, instant to hatch—it aims to make notebooks in any language "just work" on any machine with zero configuration.
 
