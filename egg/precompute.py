@@ -13,7 +13,9 @@ from .utils import get_lang_command
 from .hashing import sha256_file, write_hashes_file, load_hashes
 
 
-def precompute_cells(manifest_path: Path | str) -> List[Path]:
+def precompute_cells(
+    manifest_path: Path | str, timeout: float | None = None
+) -> List[Path]:
     """Execute each cell listed in ``manifest_path`` and capture stdout.
 
     For every cell in the manifest a new file ``<source>.out`` is written
@@ -51,6 +53,7 @@ def precompute_cells(manifest_path: Path | str) -> List[Path]:
                 stdout=out,
                 stderr=subprocess.PIPE,
                 text=True,
+                timeout=timeout,
             )
         if proc.returncode != 0:
             raise RuntimeError(f"Failed to precompute {src}:\n{proc.stderr}")

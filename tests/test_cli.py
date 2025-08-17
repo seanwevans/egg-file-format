@@ -53,7 +53,7 @@ def test_build_precompute(monkeypatch, tmp_path):
 
     called = []
 
-    def fake_precompute(path):
+    def fake_precompute(path, timeout=None):
         called.append(Path(path))
 
     monkeypatch.setattr(egg_cli, "precompute_cells", fake_precompute)
