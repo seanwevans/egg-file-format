@@ -376,3 +376,36 @@ cells: []
     )
     with pytest.raises(ValueError, match="dependency entries must be strings"):
         load_manifest(path)
+
+
+def test_duplicate_cell_sources(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: hello.py
+  - language: python
+    source: hello.py
+"""
+    )
+    with pytest.raises(ValueError, match="Duplicate cell source"):
+        load_manifest(path)
+
+
+def test_duplicate_dependencies(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+dependencies:
+  - python:3.11
+  - python:3.11
+cells: []
+"""
+    )
+    with pytest.raises(ValueError, match="Duplicate dependency"):
+        load_manifest(path)

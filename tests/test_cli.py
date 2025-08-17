@@ -1204,3 +1204,35 @@ def test_clean_dry_run(monkeypatch, tmp_path, caplog):
     assert (target_dir / "result.out").exists()
     assert sb.exists()
     assert "Would remove" in caplog.text
+
+
+@pytest.mark.parametrize("name", ["/evil.txt", "../evil.txt"])
+def test_verify_archive_rejects_unsafe_paths(tmp_path, name):
+    data = b"x"
+    hashes = {name: hashlib.sha256(data).hexdigest()}
+    hashes_path = tmp_path / "hashes.yaml"
+    hashes_path.write_text(yaml.safe_dump(hashes, sort_keys=True))
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(sign_hashes(hashes_path))
+    egg_path = tmp_path / "bad.egg"
+    with zipfile.ZipFile(egg_path, "w") as zf:
+        zi = zipfile.ZipInfo(name)
+        zf.writestr(zi, data)
+        for path in [hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as f:
+                zf.writestr(zi, f.read())
+    assert verify_archive(egg_path) is False
+
+
+@pytest.mark.parametrize("name", ["/evil.txt", "../evil.txt"])
+def test_hatch_rejects_unsafe_paths(monkeypatch, tmp_path, name):
+    egg_path = tmp_path / "bad.egg"
+    with zipfile.ZipFile(egg_path, "w") as zf:
+        zf.writestr(name, b"x")
+    monkeypatch.setattr(egg_cli, "verify_archive", lambda *a, **kw: True)
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    with pytest.raises(SystemExit):
+        egg_cli.main()

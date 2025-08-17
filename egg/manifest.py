@@ -111,10 +111,14 @@ def load_manifest(path: Path | str) -> Manifest:
     else:
         if not isinstance(deps_data, list):
             raise ValueError("'dependencies' must be a list")
+        dep_set: set[str] = set()
         dependencies = []
-        for i, dep in enumerate(deps_data):
+        for dep in deps_data:
             if not isinstance(dep, str):
                 raise ValueError("dependency entries must be strings")
+            if dep in dep_set:
+                raise ValueError(f"Duplicate dependency: {dep}")
+            dep_set.add(dep)
             dependencies.append(dep)
 
     author_data = data.get("author")
@@ -131,6 +135,7 @@ def load_manifest(path: Path | str) -> Manifest:
 
     manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
+    cell_sources: set[str] = set()
     for i, cell in enumerate(cells_data):
         if not isinstance(cell, dict):
             raise ValueError(f"Cell #{i} must be a mapping")
@@ -141,6 +146,9 @@ def load_manifest(path: Path | str) -> Manifest:
         if not isinstance(cell["source"], str):
             raise ValueError(f"Cell #{i} 'source' must be a string")
         normalized = _normalize_source(cell["source"], manifest_dir)
+        if normalized in cell_sources:
+            raise ValueError(f"Duplicate cell source: {normalized}")
+        cell_sources.add(normalized)
         cells.append(Cell(language=cell["language"], source=normalized))
 
     return Manifest(
