@@ -80,6 +80,22 @@ def test_load_plugins_legacy(monkeypatch):
     assert mod.DEFAULT_LANG_COMMANDS["ruby"] == ["ruby"]
 
 
+def test_load_plugins_invalid_runtime(monkeypatch, caplog):
+    mod = _reset_utils(monkeypatch)
+
+    def runtime():
+        return {"ruby": "ruby"}
+
+    eps = {mod.RUNTIME_PLUGIN_GROUP: [DummyEP("ruby", runtime)]}
+
+    monkeypatch.setattr(mod, "entry_points", lambda: eps)
+    with caplog.at_level("WARNING"):
+        mod.load_plugins()
+
+    assert "invalid mapping" in caplog.text
+    assert "ruby" not in mod.DEFAULT_LANG_COMMANDS
+
+
 def test_is_relative_to_inside(tmp_path: Path) -> None:
     base = tmp_path / "base"
     inner = base / "x" / "y.txt"
