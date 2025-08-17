@@ -81,3 +81,32 @@ def test_download_container_escape(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(rf, "_is_relative_to", lambda *a: False)
     with pytest.raises(ValueError):
         rf._download_container("python:3.11", dest, "http://example.com")
+
+
+def test_download_container_interrupted(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+    tmp = dest.with_suffix(".tmp")
+
+    class Failing(io.BytesIO):
+        def __init__(self) -> None:  # noqa: D401 - simple init
+            super().__init__(b"partial")
+            self._sent = False
+
+        def read(self, *args, **kwargs):  # noqa: D401 - match signature
+            if not self._sent:
+                self._sent = True
+                return super().read(*args, **kwargs)
+            raise urllib.error.URLError("boom")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    monkeypatch.setattr(rf, "urlopen", lambda *a, **kw: Failing())
+    with pytest.raises(RuntimeError):
+        rf._download_container("python:3.11", dest, "http://example.com")
+
+    assert not dest.exists()
+    assert not tmp.exists()
