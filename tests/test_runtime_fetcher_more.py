@@ -1,8 +1,7 @@
-import os
+import hashlib
+import io
 import urllib.error
 from pathlib import Path
-import importlib
-import io
 
 import pytest
 
@@ -34,6 +33,10 @@ def test_download_container_timeout(monkeypatch, tmp_path: Path) -> None:
     dest = tmp_path / "python.img"
 
     class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
         def __enter__(self):
             return self
 
@@ -114,6 +117,7 @@ def test_download_container_interrupted(monkeypatch, tmp_path: Path) -> None:
         def __init__(self) -> None:  # noqa: D401 - simple init
             super().__init__(b"partial")
             self._sent = False
+            self.headers = {}
 
         def read(self, *args, **kwargs):  # noqa: D401 - match signature
             if not self._sent:
@@ -130,6 +134,65 @@ def test_download_container_interrupted(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(rf, "urlopen", lambda *a, **kw: Failing())
     with pytest.raises(RuntimeError):
         rf._download_container("python:3.11", dest, "http://example.com")
+
+    assert not dest.exists()
+    assert not tmp.exists()
+
+
+def test_download_container_truncated(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+    tmp = dest.with_suffix(".tmp")
+
+    class Truncated:
+        def __init__(self) -> None:  # noqa: D401 - simple init
+            self._io = io.BytesIO(b"data")
+            self.headers = {"Content-Length": "8"}
+
+        def read(self, *args, **kwargs):  # noqa: D401 - match signature
+            return self._io.read(*args, **kwargs)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    monkeypatch.setattr(rf, "urlopen", lambda *a, **kw: Truncated())
+    with pytest.raises(RuntimeError, match="expected 8 bytes"):
+        rf._download_container("python:3.11", dest, "http://example.com")
+
+    assert not dest.exists()
+    assert not tmp.exists()
+
+
+def test_download_container_hash_failure(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+    tmp = dest.with_suffix(".tmp")
+    data = b"data"
+    wrong = hashlib.sha256(b"other").hexdigest()
+
+    class Dummy:
+        def __init__(self) -> None:  # noqa: D401 - simple init
+            self._io = io.BytesIO(data)
+            self.headers = {"Content-Length": str(len(data))}
+
+        def read(self, *args, **kwargs):  # noqa: D401 - match signature
+            return self._io.read(*args, **kwargs)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    monkeypatch.setattr(rf, "urlopen", lambda *a, **kw: Dummy())
+    with pytest.raises(RuntimeError, match="Checksum mismatch"):
+        rf._download_container(
+            "python:3.11",
+            dest,
+            "http://example.com",
+            expected_digest=wrong,
+        )
 
     assert not dest.exists()
     assert not tmp.exists()
