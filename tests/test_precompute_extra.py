@@ -203,7 +203,7 @@ def test_precompute_cells_passes_timeout(monkeypatch, tmp_path: Path) -> None:
     precompute_cells(manifest, timeout=5.0)
 
 
-def test_precompute_cells_timeout_error(monkeypatch, tmp_path: Path) -> None:
+def test_precompute_cells_timeout_cleanup(monkeypatch, tmp_path: Path) -> None:
     src = tmp_path / "hello.py"
     src.write_text("print('hi')\n")
     manifest = _write_manifest(tmp_path / "manifest.yaml")
@@ -211,12 +211,17 @@ def test_precompute_cells_timeout_error(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(shutil, "which", lambda c: c)
 
     def fake_run(cmd, stdout=None, **kwargs):
+        if stdout:
+            stdout.write("partial")
         raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout"))
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    with pytest.raises(subprocess.TimeoutExpired):
+    out_file = src.with_name(src.name + ".out")
+    with pytest.raises(RuntimeError) as exc:
         precompute_cells(manifest, timeout=0.1)
+    assert str(src) in str(exc.value)
+    assert not out_file.exists()
 
 
 def test_cli_precompute_timeout(monkeypatch, tmp_path: Path) -> None:
