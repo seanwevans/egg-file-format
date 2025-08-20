@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 import pytest  # noqa: E402
-from egg.chunker import chunk  # noqa: E402
+from egg.chunker import Chunk, chunk  # noqa: E402
 
 
 def test_chunk_deterministic(tmp_path: Path) -> None:
@@ -13,9 +13,9 @@ def test_chunk_deterministic(tmp_path: Path) -> None:
     f.write_bytes(data)
 
     expected = [
-        {"offset": 0, "size": 4},
-        {"offset": 4, "size": 4},
-        {"offset": 8, "size": 2},
+        Chunk(offset=0, size=4),
+        Chunk(offset=4, size=4),
+        Chunk(offset=8, size=2),
     ]
 
     first = chunk(f, chunk_size=4)
