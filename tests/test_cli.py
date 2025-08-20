@@ -139,11 +139,18 @@ def test_hatch(monkeypatch, tmp_path, caplog, os_name, conf_file):
 
     importlib.reload(sandboxer)
 
+    cleanup_called = {"v": False}
+
     def fake_prepare(manifest, dest):
-        images = sandboxer.prepare_images(manifest, dest)
+        images, cleanup = sandboxer.prepare_images(manifest, dest)
         sb_calls.append(sorted(images.keys()))
         sb_configs.append(all((p / conf_file).is_file() for p in images.values()))
-        return images
+
+        def wrapped():
+            cleanup_called["v"] = True
+            cleanup()
+
+        return images, wrapped
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
@@ -164,6 +171,7 @@ def test_hatch(monkeypatch, tmp_path, caplog, os_name, conf_file):
     assert f"[hatch] Completed running {egg_path}" in caplog.text
     assert sb_calls == [["python", "r"]]
     assert sb_configs == [True]
+    assert cleanup_called["v"]
 
 
 def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
@@ -187,6 +195,7 @@ def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
 
     def fake_prepare(*a, **kw):
         called.append(True)
+        return {}, lambda: None
 
     # execute once to cover the function body
     fake_prepare(None, None)

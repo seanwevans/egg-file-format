@@ -15,7 +15,7 @@ from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 import socket
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import List
 
 from .utils import _is_relative_to
@@ -207,8 +207,18 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
             raise ValueError(f"Duplicate dependency entry: {dep}")
         seen.add(dep)
         if ":" in dep:
-            if "/" in dep or "\\" in dep:
+            if "\\" in dep:
                 raise ValueError(f"Invalid container image name: {dep}")
+
+            image_name = dep.split(":", 1)[0]
+            posix = PurePosixPath(image_name)
+            if (
+                posix.is_absolute()
+                or posix.as_posix() != image_name
+                or any(part == ".." for part in posix.parts)
+            ):
+                raise ValueError(f"Invalid container image name: {dep}")
+
             if registry:
                 safe = dep.replace("/", "_").replace("\\", "_").replace(":", "_")
                 dest = (manifest_dir / f"{safe}.img").resolve(strict=False)

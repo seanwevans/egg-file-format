@@ -47,14 +47,18 @@ def precompute_cells(
         if prev_hashes.get(src_rel.as_posix()) == digest and out_file.exists():
             outputs.append(out_file)
             continue
-        with open(out_file, "w", encoding="utf-8") as out:
-            proc = subprocess.run(
-                cmd + [str(src)],
-                stdout=out,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=timeout,
-            )
+        try:
+            with open(out_file, "w", encoding="utf-8") as out:
+                proc = subprocess.run(
+                    cmd + [str(src)],
+                    stdout=out,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    timeout=timeout,
+                )
+        except subprocess.TimeoutExpired as exc:
+            out_file.unlink(missing_ok=True)
+            raise RuntimeError(f"Timed out precomputing {src}") from exc
         if proc.returncode != 0:
             raise RuntimeError(f"Failed to precompute {src}:\n{proc.stderr}")
         outputs.append(out_file)

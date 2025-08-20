@@ -68,9 +68,23 @@ def test_prepare_images_uses_tempdir(monkeypatch, tmp_path: Path):
         description="d",
         cells=[Cell(language="python", source="a.py")],
     )
-    monkeypatch.setattr(tempfile, "mkdtemp", lambda: str(tmp_path / "tmp"))
-    images = prepare_images(manifest, None)
-    assert images["python"].parent == tmp_path / "tmp"
+
+    class DummyTempDir:
+        def __init__(self):
+            self.name = str(tmp_path / "tmp")
+            Path(self.name).mkdir()
+            self.cleaned = False
+
+        def cleanup(self):
+            self.cleaned = True
+
+    dummy = DummyTempDir()
+    monkeypatch.setattr(tempfile, "TemporaryDirectory", lambda: dummy)
+
+    images, cleanup = prepare_images(manifest, None)
+    assert images["python"].parent == Path(dummy.name)
+    cleanup()
+    assert dummy.cleaned
 
 
 def test_prepare_images_skips_duplicate(tmp_path: Path):
@@ -82,8 +96,22 @@ def test_prepare_images_skips_duplicate(tmp_path: Path):
             Cell(language="python", source="b.py"),
         ],
     )
-    images = prepare_images(manifest, tmp_path)
+    images, cleanup = prepare_images(manifest, tmp_path)
     assert list(images.keys()) == ["python"]
+    cleanup()
+
+
+def test_prepare_images_tempdir_cleanup(tmp_path: Path):
+    manifest = Manifest(
+        name="ex",
+        description="d",
+        cells=[Cell(language="python", source="a.py")],
+    )
+    images, cleanup = prepare_images(manifest)
+    base = images["python"].parent
+    assert base.exists()
+    cleanup()
+    assert not base.exists()
 
 
 def test_check_platform_unsupported(monkeypatch):
