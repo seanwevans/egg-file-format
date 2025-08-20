@@ -39,7 +39,8 @@ def test_prepare_images_writes_config(
         ],
     )
 
-    images = sb.prepare_images(manifest, tmp_path)
+    images, cleanup = sb.prepare_images(manifest, tmp_path)
+    cleanup()
 
     assert set(images.keys()) == {"python", "r"}
     for path in images.values():

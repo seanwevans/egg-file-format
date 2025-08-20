@@ -90,21 +90,28 @@ def hatch(args: argparse.Namespace) -> None:
 
         if args.no_sandbox:
             logger.warning("[hatch] Running without sandbox (unsafe)")
-        else:
-            prepare_images(manifest, Path(tmpdir) / "sandbox")
 
-        for cell in manifest.cells:
-            src = Path(tmpdir) / cell.source
-            lang = cell.language.lower()
-            base_cmd = get_lang_command(lang)
-            if base_cmd is None:
-                raise SystemExit(f"Unsupported language: {cell.language}")
-            cmd = base_cmd[0]
-            if shutil.which(cmd) is None:
-                raise SystemExit(
-                    f"Required runtime '{cmd}' for {cell.language} cells not found"
-                )
-            subprocess.run(base_cmd + [str(src)], check=True)
+            def cleanup() -> None:
+                pass
+
+        else:
+            _, cleanup = prepare_images(manifest, Path(tmpdir) / "sandbox")
+
+        try:
+            for cell in manifest.cells:
+                src = Path(tmpdir) / cell.source
+                lang = cell.language.lower()
+                base_cmd = get_lang_command(lang)
+                if base_cmd is None:
+                    raise SystemExit(f"Unsupported language: {cell.language}")
+                cmd = base_cmd[0]
+                if shutil.which(cmd) is None:
+                    raise SystemExit(
+                        f"Required runtime '{cmd}' for {cell.language} cells not found"
+                    )
+                subprocess.run(base_cmd + [str(src)], check=True)
+        finally:
+            cleanup()
 
     logger.info("[hatch] Completed running %s", egg_path)
 

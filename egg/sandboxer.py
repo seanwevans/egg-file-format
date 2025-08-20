@@ -18,7 +18,7 @@ import subprocess
 import platform
 from .constants import SUPPORTED_PLATFORMS
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Callable
 
 from .manifest import Manifest
 
@@ -97,7 +97,7 @@ def build_container_image(language: str, dest: Path) -> None:
 
 def prepare_images(
     manifest: Manifest, base_dir: Path | str | None = None
-) -> Dict[str, Path]:
+) -> tuple[Dict[str, Path], Callable[[], None]]:
     """Prepare container images for each runtime referenced in ``manifest``.
 
     Parameters
@@ -110,13 +110,26 @@ def prepare_images(
 
     Returns
     -------
-    Dict[str, Path]
-        Mapping of language name to created image directory path.
+    Tuple[Dict[str, Path], Callable[[], None]]
+        Mapping of language name to created image directory path and a cleanup
+        function that removes any temporary directories created by this
+        function. Call the cleanup once the images are no longer needed.
     """
     check_platform()
     system = platform.system()
+
+    def _noop() -> None:
+        pass
+
+    cleanup: Callable[[], None] = _noop
     if base_dir is None:
-        base = Path(tempfile.mkdtemp())
+        tmp = tempfile.TemporaryDirectory()
+        base = Path(tmp.name)
+
+        def _cleanup() -> None:
+            tmp.cleanup()
+
+        cleanup = _cleanup
     else:
         base = Path(base_dir)
     images: Dict[str, Path] = {}
@@ -132,7 +145,7 @@ def prepare_images(
 
         logger.info("[sandboxer] prepared %s image at %s", lang, img_dir)
         images[lang] = img_dir
-    return images
+    return images, cleanup
 
 
 def launch_microvm(image_dir: Path) -> subprocess.CompletedProcess:
