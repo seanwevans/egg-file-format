@@ -52,6 +52,29 @@ def test_download_container_timeout(monkeypatch, tmp_path: Path) -> None:
     assert result == dest
 
 
+def test_download_container_repo(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "library_python_3.11.img"
+
+    class Dummy(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    called = []
+
+    def fake_urlopen(url, *, timeout=None):
+        called.append(url)
+        return Dummy(b"data")
+
+    monkeypatch.setattr(rf, "urlopen", fake_urlopen)
+    result = rf._download_container("library/python:3.11", dest, "http://example.com")
+    assert called == ["http://example.com/library/python%3A3.11.img"]
+    assert dest.read_bytes() == b"data"
+    assert result == dest
+
+
 def test_fetch_empty_manifest(tmp_path: Path) -> None:
     path = tmp_path / "manifest.yaml"
     path.write_text("")
