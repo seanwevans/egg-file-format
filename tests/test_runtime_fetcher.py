@@ -119,6 +119,10 @@ dependencies:
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
 
     class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
         def __enter__(self):
             return self
 
@@ -360,6 +364,10 @@ dependencies:
     monkeypatch.setenv("EGG_DOWNLOAD_TIMEOUT", "12.5")
 
     class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
         def __enter__(self):
             return self
 

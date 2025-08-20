@@ -8,9 +8,9 @@ environment variable is unset.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
-import shutil
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import List
 
 from .utils import _is_relative_to
+
+
+_CHUNK_SIZE = 8192
+_PROGRESS_INTERVAL = 1 << 20  # 1 MiB
 
 try:
     import yaml
@@ -42,7 +46,12 @@ def _get_registry_url() -> str | None:
 
 
 def _download_container(
-    image: str, dest: Path, base_url: str, timeout: float | None = None
+    image: str,
+    dest: Path,
+    base_url: str,
+    timeout: float | None = None,
+    *,
+    expected_digest: str | None = None,
 ) -> Path:
     """Download ``image`` from ``base_url`` to ``dest``.
 
@@ -52,6 +61,9 @@ def _download_container(
         Socket timeout passed to ``urlopen``. Defaults to the value of
         ``EGG_DOWNLOAD_TIMEOUT`` if set, otherwise ``30.0``. Invalid
         environment values raise ``ValueError``.
+    expected_digest : str, optional
+        Expected SHA256 hex digest of the downloaded image. If provided and
+        the computed checksum does not match, ``RuntimeError`` is raised.
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
@@ -85,7 +97,49 @@ def _download_container(
     tmp = dest.with_suffix(".tmp")
     try:
         with urlopen(url, timeout=timeout) as resp, open(tmp, "wb") as fh:
-            shutil.copyfileobj(resp, fh)
+            content_length = resp.headers.get("Content-Length")
+            try:
+                total = int(content_length) if content_length is not None else None
+            except (ValueError, TypeError):
+                total = None
+
+            h = hashlib.sha256()
+            transferred = 0
+            next_log = _PROGRESS_INTERVAL
+
+            while True:
+                chunk = resp.read(_CHUNK_SIZE)
+                if not chunk:
+                    break
+                fh.write(chunk)
+                h.update(chunk)
+                transferred += len(chunk)
+                if transferred >= next_log:
+                    if total is not None:
+                        logger.info(
+                            "[runtime_fetcher] downloaded %d/%d bytes of %s",
+                            transferred,
+                            total,
+                            image,
+                        )
+                    else:
+                        logger.info(
+                            "[runtime_fetcher] downloaded %d bytes of %s",
+                            transferred,
+                            image,
+                        )
+                    while transferred >= next_log:
+                        next_log += _PROGRESS_INTERVAL
+
+        if total is not None and transferred != total:
+            raise RuntimeError(
+                f"Incomplete download for {image}: expected {total} bytes, got {transferred}"
+            )
+        digest = h.hexdigest()
+        if expected_digest is not None and digest != expected_digest:
+            raise RuntimeError(
+                f"Checksum mismatch for {image}: expected {expected_digest} but got {digest}"
+            )
     except (
         HTTPError,
         URLError,
