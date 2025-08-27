@@ -35,6 +35,8 @@ egg verify --egg demo.egg
 egg info --egg demo.egg
 egg clean .
 ```
+A file `<source>.out` is created for each executed cell containing stdout. If a
+cell fails, its stderr is written to `<source>.err` for later inspection.
 
 For a Julia example see `examples/julia_manifest.yaml`.
 A full manifest mixing twelve languages is provided in `examples/dozen_manifest.yaml`.
@@ -123,7 +125,9 @@ egg clean  [path] [--dry-run]
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
 
-The `clean` command removes `precompute_hashes.yaml`, `*.out` files, and any `sandbox` directories beneath the given path. Use `--dry-run` to list targets without deleting them.
+The `clean` command removes `precompute_hashes.yaml`, `*.out` and `*.err` files,
+and any `sandbox` directories beneath the given path. Use `--dry-run` to list
+targets without deleting them.
 
 ### Environment Variables
 

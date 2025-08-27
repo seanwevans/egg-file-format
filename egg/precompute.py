@@ -19,7 +19,9 @@ def precompute_cells(
     """Execute each cell listed in ``manifest_path`` and capture stdout.
 
     For every cell in the manifest a new file ``<source>.out`` is written
-    containing the program output. The path of each created file is returned.
+    containing the program output. If execution fails a companion
+    ``<source>.err`` file is written containing stderr. The path of each
+    created file is returned.
     """
     manifest_path = Path(manifest_path)
     manifest = load_manifest(manifest_path)
@@ -60,7 +62,10 @@ def precompute_cells(
             out_file.unlink(missing_ok=True)
             raise RuntimeError(f"Timed out precomputing {src}") from exc
         if proc.returncode != 0:
-            raise RuntimeError(f"Failed to precompute {src}:\n{proc.stderr}")
+            err_file = src.with_name(src.name + ".err")
+            err_file.write_text(proc.stderr, encoding="utf-8")
+            outputs.extend([out_file, err_file])
+            raise RuntimeError(f"Failed to precompute {src}; see {err_file}")
         outputs.append(out_file)
 
     write_hashes_file(new_hashes, cache_path)
