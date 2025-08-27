@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 AGENT_PLUGIN_GROUP = "egg.agents"
 RUNTIME_PLUGIN_GROUP = "egg.runtimes"
 
+LOADED_RUNTIME_PLUGINS: set[str] = set()
+LOADED_AGENT_PLUGINS: set[str] = set()
+
 
 def _is_relative_to(path: Path, base: Path) -> bool:
     """Return True if *path* is relative to *base*.
@@ -51,7 +54,10 @@ def get_lang_command(lang: str) -> list[str] | None:
 
 
 def load_plugins() -> None:
-    """Discover and register runtime and agent plug-ins."""
+    """Discover and register runtime and agent plug-ins.
+
+    Subsequent calls are idempotent; plug-ins are only loaded once.
+    """
 
     eps = entry_points()
 
@@ -63,6 +69,9 @@ def load_plugins() -> None:
         agent_eps = eps.get(AGENT_PLUGIN_GROUP, [])
 
     for ep in runtime_eps:
+        if ep.name in LOADED_RUNTIME_PLUGINS:
+            logger.debug("[plugins] runtime %s already loaded", ep.name)
+            continue
         try:
             handler = ep.load()
             extra = handler()
@@ -84,13 +93,18 @@ def load_plugins() -> None:
                         )
                         continue
                     DEFAULT_LANG_COMMANDS[lang] = cmd
+            LOADED_RUNTIME_PLUGINS.add(ep.name)
             logger.debug("[plugins] loaded runtime %s", ep.name)
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading runtime plug-in %s: %s", ep.name, exc)
 
     for ep in agent_eps:
+        if ep.name in LOADED_AGENT_PLUGINS:
+            logger.debug("[plugins] agent %s already loaded", ep.name)
+            continue
         try:
             ep.load()()
+            LOADED_AGENT_PLUGINS.add(ep.name)
             logger.debug("[plugins] loaded agent %s", ep.name)
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading agent plug-in %s: %s", ep.name, exc)
