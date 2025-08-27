@@ -182,6 +182,7 @@ def clean(args: argparse.Namespace) -> None:
     targets: set[Path] = set()
     targets.update(root.rglob("precompute_hashes.yaml"))
     targets.update(root.rglob("*.out"))
+    targets.update(root.rglob("*.err"))
     targets.update(p for p in root.rglob("sandbox") if p.is_dir())
 
     for path in sorted(targets):

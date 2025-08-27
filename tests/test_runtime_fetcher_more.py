@@ -59,6 +59,10 @@ def test_download_container_repo(monkeypatch, tmp_path: Path) -> None:
     dest = tmp_path / "library_python_3.11.img"
 
     class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:
+            super().__init__(data)
+            self.headers = {}
+
         def __enter__(self):
             return self
 

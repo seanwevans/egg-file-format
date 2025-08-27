@@ -112,8 +112,12 @@ cells:
     with pytest.raises(RuntimeError) as exc:
         precompute_cells(manifest)
     msg = str(exc.value)
+    err_file = src.with_name(src.name + ".err")
+    out_file = src.with_name(src.name + ".out")
     assert str(src) in msg
-    assert "boom" in msg
+    assert str(err_file) in msg
+    assert err_file.read_text() == "boom"
+    assert out_file.exists()
 
 
 def _write_manifest(path: Path) -> Path:

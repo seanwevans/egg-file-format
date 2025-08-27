@@ -1178,6 +1178,7 @@ def test_clean_removes_artifacts(monkeypatch, tmp_path, caplog):
     target_dir.mkdir()
     (target_dir / "precompute_hashes.yaml").write_text("{}")
     (target_dir / "result.out").write_text("hi")
+    (target_dir / "result.err").write_text("oops")
     sb = target_dir / "sandbox"
     sb.mkdir()
 
@@ -1189,6 +1190,7 @@ def test_clean_removes_artifacts(monkeypatch, tmp_path, caplog):
 
     assert not (target_dir / "precompute_hashes.yaml").exists()
     assert not (target_dir / "result.out").exists()
+    assert not (target_dir / "result.err").exists()
     assert not sb.exists()
     assert "[clean] Removed" in caplog.text
 
@@ -1198,6 +1200,7 @@ def test_clean_dry_run(monkeypatch, tmp_path, caplog):
     target_dir.mkdir()
     (target_dir / "precompute_hashes.yaml").write_text("{}")
     (target_dir / "result.out").write_text("hi")
+    (target_dir / "result.err").write_text("oops")
     sb = target_dir / "sandbox"
     sb.mkdir()
 
@@ -1211,6 +1214,7 @@ def test_clean_dry_run(monkeypatch, tmp_path, caplog):
 
     assert (target_dir / "precompute_hashes.yaml").exists()
     assert (target_dir / "result.out").exists()
+    assert (target_dir / "result.err").exists()
     assert sb.exists()
     assert "Would remove" in caplog.text
 
