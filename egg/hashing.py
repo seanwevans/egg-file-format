@@ -186,8 +186,13 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
             if hashlib.sha256(data).hexdigest() != expected:
                 return False
 
-        # Ensure no unverified files are present in the archive
-        names = set(zf.namelist())
+        # Ensure no unverified files are present in the archive and there are no
+        # duplicate entries. ``ZipFile.namelist`` returns a list which may
+        # contain duplicates, so check that before converting to a ``set``.
+        names_list = zf.namelist()
+        if len(names_list) != len(set(names_list)):
+            return False
+        names = set(names_list)
         names.discard("hashes.yaml")
         names.discard("hashes.sig")
         if names != set(hashes.keys()):
