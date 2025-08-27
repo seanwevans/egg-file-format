@@ -97,7 +97,10 @@ def _download_container(
     tmp = dest.with_suffix(".tmp")
     try:
         with urlopen(url, timeout=timeout) as resp, open(tmp, "wb") as fh:
-            content_length = resp.headers.get("Content-Length")
+            # ``urlopen`` responses provide a ``headers`` mapping. Test
+            # doubles used in this project may omit the attribute, so fall back
+            # to an empty mapping to avoid ``AttributeError``.
+            content_length = getattr(resp, "headers", {}).get("Content-Length")
             try:
                 total = int(content_length) if content_length is not None else None
             except (ValueError, TypeError):
@@ -198,6 +201,11 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
     manifest_dir = manifest_path.parent.resolve()
     resolved: List[Path | str] = []
     seen: set[str] = set()
+    # Track sanitized container filenames to avoid collisions when
+    # downloading multiple images that differ only by characters replaced
+    # during sanitization. Mapping allows us to report the original conflicting
+    # dependency strings when a clash occurs.
+    safe_names: dict[str, str] = {}
     registry = _get_registry_url()
 
     for dep in deps:
@@ -221,6 +229,13 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
 
             if registry:
                 safe = dep.replace("/", "_").replace("\\", "_").replace(":", "_")
+                if safe in safe_names:
+                    other = safe_names[safe]
+                    raise ValueError(
+                        "Sanitized dependency name conflict: "
+                        f"{dep!r} and {other!r} both map to {safe!r}"
+                    )
+                safe_names[safe] = dep
                 dest = (manifest_dir / f"{safe}.img").resolve(strict=False)
                 if not _is_relative_to(dest, manifest_dir):
                     raise ValueError(
