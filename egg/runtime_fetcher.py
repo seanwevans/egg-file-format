@@ -62,8 +62,10 @@ def _download_container(
         ``EGG_DOWNLOAD_TIMEOUT`` if set, otherwise ``30.0``. Invalid
         environment values raise ``ValueError``.
     expected_digest : str, optional
-        Expected SHA256 hex digest of the downloaded image. If provided and
-        the computed checksum does not match, ``RuntimeError`` is raised.
+        Expected SHA256 hex digest of the image. Existing files with a matching
+        digest are trusted; missing or mismatched digests trigger a
+        re-download. After downloading, if the checksum does not match,
+        ``RuntimeError`` is raised.
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
@@ -89,8 +91,20 @@ def _download_container(
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.is_file():
-        logger.debug("[runtime_fetcher] using cached %s", dest)
-        return dest
+        if expected_digest is not None:
+            h = hashlib.sha256()
+            with open(dest, "rb") as fh:
+                for chunk in iter(lambda: fh.read(_CHUNK_SIZE), b""):
+                    h.update(chunk)
+            digest = h.hexdigest()
+            if digest == expected_digest:
+                logger.debug(
+                    "[runtime_fetcher] using cached %s (digest verified)", dest
+                )
+                return dest
+            logger.info("[runtime_fetcher] cached %s digest mismatch; refreshing", dest)
+        else:
+            logger.info("[runtime_fetcher] refreshing %s (no expected digest)", dest)
 
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
