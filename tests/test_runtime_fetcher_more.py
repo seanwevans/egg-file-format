@@ -10,7 +10,8 @@ import egg.runtime_fetcher as rf
 
 def test_download_container_cached(monkeypatch, tmp_path: Path) -> None:
     dest = tmp_path / "python.img"
-    dest.write_text("cached")
+    data = b"cached"
+    dest.write_bytes(data)
     called = []
 
     def fail(*args, **kwargs):
@@ -24,9 +25,70 @@ def test_download_container_cached(monkeypatch, tmp_path: Path) -> None:
     called.clear()
 
     monkeypatch.setattr(rf, "urlopen", fail)
-    result = rf._download_container("python:3.11", dest, "http://example.com")
+    digest = hashlib.sha256(data).hexdigest()
+    result = rf._download_container(
+        "python:3.11", dest, "http://example.com", expected_digest=digest
+    )
     assert result == dest
     assert not called
+
+
+def test_download_container_refresh_if_no_digest(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+    dest.write_text("old")
+
+    class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    called = []
+
+    def fake_urlopen(url, *, timeout=None):
+        called.append(url)
+        return Dummy(b"new")
+
+    monkeypatch.setattr(rf, "urlopen", fake_urlopen)
+    rf._download_container("python:3.11", dest, "http://example.com")
+    assert dest.read_bytes() == b"new"
+    assert called
+
+
+def test_download_container_refresh_on_mismatch(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+    dest.write_text("old")
+    data = b"new"
+
+    class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    called = []
+
+    def fake_urlopen(url, *, timeout=None):
+        called.append(url)
+        return Dummy(data)
+
+    monkeypatch.setattr(rf, "urlopen", fake_urlopen)
+    digest = hashlib.sha256(data).hexdigest()
+    rf._download_container(
+        "python:3.11", dest, "http://example.com", expected_digest=digest
+    )
+    assert dest.read_bytes() == data
+    assert called
 
 
 def test_download_container_timeout(monkeypatch, tmp_path: Path) -> None:
