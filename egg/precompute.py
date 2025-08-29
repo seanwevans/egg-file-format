@@ -46,6 +46,7 @@ def precompute_cells(
         digest = sha256_file(src)
         new_hashes[src_rel.as_posix()] = digest
         out_file = src.with_name(src.name + ".out")
+        err_file = src.with_name(src.name + ".err")
         if prev_hashes.get(src_rel.as_posix()) == digest and out_file.exists():
             outputs.append(out_file)
             continue
@@ -62,10 +63,10 @@ def precompute_cells(
             out_file.unlink(missing_ok=True)
             raise RuntimeError(f"Timed out precomputing {src}") from exc
         if proc.returncode != 0:
-            err_file = src.with_name(src.name + ".err")
             err_file.write_text(proc.stderr, encoding="utf-8")
             outputs.extend([out_file, err_file])
             raise RuntimeError(f"Failed to precompute {src}; see {err_file}")
+        err_file.unlink(missing_ok=True)
         outputs.append(out_file)
 
     write_hashes_file(new_hashes, cache_path)
