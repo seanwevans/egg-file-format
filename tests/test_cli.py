@@ -1165,6 +1165,7 @@ def test_sandbox_launch_helpers(monkeypatch, tmp_path, system, expected):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(platform, "system", lambda: system)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
 
     sandboxer.launch_microvm(tmp_path)
     sandboxer.launch_container(tmp_path)

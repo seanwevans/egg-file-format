@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -63,4 +64,21 @@ def test_launch_container_corrupt_config(
 ) -> None:
     (tmp_path / "container.json").write_text(content)
     with pytest.raises(ValueError, match=message):
+        launch_container(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "os_name,runtime",
+    [
+        ("Linux", "runc"),
+        ("Darwin", "docker"),
+    ],
+)
+def test_launch_container_missing_runtime(
+    monkeypatch, tmp_path: Path, os_name: str, runtime: str
+) -> None:
+    (tmp_path / "container.json").write_text('{"language": "python"}')
+    monkeypatch.setattr(platform, "system", lambda: os_name)
+    monkeypatch.setattr(shutil, "which", lambda _: None)
+    with pytest.raises(FileNotFoundError, match=runtime):
         launch_container(tmp_path)

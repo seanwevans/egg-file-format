@@ -16,6 +16,7 @@ import logging
 import tempfile
 import subprocess
 import platform
+import shutil
 from .constants import SUPPORTED_PLATFORMS
 from pathlib import Path
 from typing import Dict, Callable
@@ -186,9 +187,15 @@ def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
     language = data["language"]
 
     if platform.system() == "Linux":
-        cmd = ["runc", "run", language]
+        runtime = "runc"
     else:
-        cmd = ["docker", "run", language]
+        runtime = "docker"
 
+    if shutil.which(runtime) is None:
+        raise FileNotFoundError(
+            f"'{runtime}' binary not found; please install {runtime} or ensure it is on PATH"
+        )
+
+    cmd = [runtime, "run", language]
     logger.info("[sandboxer] launching container: %s", " ".join(cmd))
     return subprocess.run(cmd, check=True)

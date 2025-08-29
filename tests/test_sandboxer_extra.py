@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import platform
+import shutil
 import pytest  # noqa: F401
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -57,6 +58,7 @@ def test_launch_container(monkeypatch, tmp_path: Path):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(platform, "system", lambda: "Linux")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/runc")
     result = launch_container(tmp_path)
     assert called and "runc" in called[0][0]
     assert result.returncode == 0
