@@ -165,7 +165,14 @@ def launch_microvm(image_dir: Path) -> subprocess.CompletedProcess:
     config = image_dir / "microvm.json"
     cmd = ["firecracker", "--no-api", "--config-file", str(config)]
     logger.info("[sandboxer] launching Firecracker: %s", " ".join(cmd))
-    return subprocess.run(cmd, check=True)
+    try:
+        return subprocess.run(cmd, check=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Failed to run '{' '.join(cmd)}': {exc}") from exc
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"Command '{' '.join(cmd)}' exited with non-zero status {exc.returncode}"
+        ) from exc
 
 
 def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
@@ -198,4 +205,11 @@ def launch_container(image_dir: Path) -> subprocess.CompletedProcess:
 
     cmd = [runtime, "run", language]
     logger.info("[sandboxer] launching container: %s", " ".join(cmd))
-    return subprocess.run(cmd, check=True)
+    try:
+        return subprocess.run(cmd, check=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Failed to run '{' '.join(cmd)}': {exc}") from exc
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"Command '{' '.join(cmd)}' exited with non-zero status {exc.returncode}"
+        ) from exc
