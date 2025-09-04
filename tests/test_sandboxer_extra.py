@@ -124,3 +124,51 @@ def test_check_platform_unsupported(monkeypatch):
     sb = importlib.reload(sb)
     with pytest.raises(RuntimeError, match="Unsupported platform"):
         sb.check_platform()
+
+
+def test_launch_microvm_missing_binary(monkeypatch, tmp_path: Path):
+    (tmp_path / "microvm.json").write_text("{}")
+
+    def fake_run(cmd, check=True):
+        raise FileNotFoundError("no such file or directory")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="firecracker"):
+        launch_microvm(tmp_path)
+
+
+def test_launch_microvm_nonzero_exit(monkeypatch, tmp_path: Path):
+    (tmp_path / "microvm.json").write_text("{}")
+
+    def fake_run(cmd, check=True):
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="non-zero status 1"):
+        launch_microvm(tmp_path)
+
+
+def test_launch_container_missing_binary(monkeypatch, tmp_path: Path):
+    (tmp_path / "container.json").write_text('{"language": "python"}')
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
+    monkeypatch.setattr(shutil, "which", lambda _: "/fake/runc")
+
+    def fake_run(cmd, check=True):
+        raise FileNotFoundError("no such file or directory")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="runc"):
+        launch_container(tmp_path)
+
+
+def test_launch_container_nonzero_exit(monkeypatch, tmp_path: Path):
+    (tmp_path / "container.json").write_text('{"language": "python"}')
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/runc")
+
+    def fake_run(cmd, check=True):
+        raise subprocess.CalledProcessError(2, cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="non-zero status 2"):
+        launch_container(tmp_path)
