@@ -29,7 +29,7 @@ def compose(
     manifest_path: Path | str,
     output_path: Path | str,
     *,
-    dependencies: Iterable[Path] | None = None,
+    dependencies: Iterable[Path | str] | None = None,
     private_key: bytes | None = None,
 ) -> None:
     """Compose an egg archive by zipping manifest, sources, and dependencies.
@@ -40,7 +40,7 @@ def compose(
         Path to the manifest YAML file describing sources.
     output_path : Path | str
         Destination ``.egg`` archive path.
-    dependencies : Iterable[Path] | None, optional
+    dependencies : Iterable[Path | str] | None, optional
         Additional files to include under ``runtime/``.
     private_key : bytes | None, optional
         Private key used to sign ``hashes.yaml``. Defaults to ``DEFAULT_PRIVATE_KEY``.
@@ -77,15 +77,17 @@ def compose(
         seen_runtime: set[str] = set()
         if dependencies:
             for dep in dependencies:
-                if isinstance(dep, Path):
-                    dest_name = dep.name
-                    if dest_name in seen_runtime:
-                        raise ValueError(f"Duplicate dependency filename: {dest_name}")
-                    seen_runtime.add(dest_name)
-                    dest = runtime_dir / dest_name
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(dep, dest)
-                    copied.append(dest)
+                if isinstance(dep, str) and ":" in dep:
+                    continue
+                dep = Path(dep)
+                dest_name = dep.name
+                if dest_name in seen_runtime:
+                    raise ValueError(f"Duplicate dependency filename: {dest_name}")
+                seen_runtime.add(dest_name)
+                dest = runtime_dir / dest_name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(dep, dest)
+                copied.append(dest)
 
         # write hashes file and signature
         hashes = compute_hashes(copied, base_dir=tmpdir_path)
