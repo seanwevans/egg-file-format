@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 from .manifest import load_manifest
-from .utils import get_lang_command
+from .utils import get_lang_command, load_plugins
 from .hashing import sha256_file, write_hashes_file, load_hashes
 
 
@@ -23,6 +23,7 @@ def precompute_cells(
     ``<source>.err`` file is written containing stderr. The path of each
     created file is returned.
     """
+    load_plugins()
     manifest_path = Path(manifest_path)
     manifest = load_manifest(manifest_path)
     manifest_dir = manifest_path.parent.resolve()
