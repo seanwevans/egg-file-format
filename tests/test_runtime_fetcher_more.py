@@ -1,6 +1,7 @@
 import hashlib
 import io
 import urllib.error
+from urllib.request import Request
 from pathlib import Path
 
 import pytest
@@ -50,8 +51,8 @@ def test_download_container_refresh_if_no_digest(monkeypatch, tmp_path: Path) ->
 
     called = []
 
-    def fake_urlopen(url, *, timeout=None):
-        called.append(url)
+    def fake_urlopen(req, *, timeout=None):
+        called.append(req.full_url)
         return Dummy(b"new")
 
     monkeypatch.setattr(rf, "urlopen", fake_urlopen)
@@ -78,8 +79,8 @@ def test_download_container_refresh_on_mismatch(monkeypatch, tmp_path: Path) -> 
 
     called = []
 
-    def fake_urlopen(url, *, timeout=None):
-        called.append(url)
+    def fake_urlopen(req, *, timeout=None):
+        called.append(req.full_url)
         return Dummy(data)
 
     monkeypatch.setattr(rf, "urlopen", fake_urlopen)
@@ -105,7 +106,7 @@ def test_download_container_timeout(monkeypatch, tmp_path: Path) -> None:
         def __exit__(self, *exc):
             pass
 
-    def fake_urlopen(url, *, timeout=None):
+    def fake_urlopen(req, *, timeout=None):
         assert timeout == 5
         return Dummy(b"data")
 
@@ -133,8 +134,8 @@ def test_download_container_repo(monkeypatch, tmp_path: Path) -> None:
 
     called = []
 
-    def fake_urlopen(url, *, timeout=None):
-        called.append(url)
+    def fake_urlopen(req, *, timeout=None):
+        called.append(req.full_url)
         return Dummy(b"data")
 
     monkeypatch.setattr(rf, "urlopen", fake_urlopen)
@@ -142,6 +143,62 @@ def test_download_container_repo(monkeypatch, tmp_path: Path) -> None:
     assert called == ["http://example.com/library/python%3A3.11.img"]
     assert dest.read_bytes() == b"data"
     assert result == dest
+
+
+def test_download_container_default_user_agent(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+
+    class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    seen: dict[str, str | None] = {}
+
+    def fake_urlopen(req: Request, *, timeout=None):
+        assert isinstance(req, Request)
+        seen["ua"] = req.get_header("User-agent")
+        return Dummy(b"data")
+
+    monkeypatch.setattr(rf, "urlopen", fake_urlopen)
+    rf._download_container("python:3.11", dest, "http://example.com")
+    assert dest.read_bytes() == b"data"
+    assert seen["ua"] == "egg-runtime-fetcher"
+
+
+def test_download_container_user_agent_override(monkeypatch, tmp_path: Path) -> None:
+    dest = tmp_path / "python.img"
+
+    class Dummy(io.BytesIO):
+        def __init__(self, data: bytes) -> None:  # noqa: D401 - simple init
+            super().__init__(data)
+            self.headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
+    seen: dict[str, str | None] = {}
+
+    def fake_urlopen(req: Request, *, timeout=None):
+        assert isinstance(req, Request)
+        seen["ua"] = req.get_header("User-agent")
+        return Dummy(b"data")
+
+    monkeypatch.setattr(rf, "urlopen", fake_urlopen)
+    rf._download_container(
+        "python:3.11", dest, "http://example.com", user_agent="custom-agent"
+    )
+    assert dest.read_bytes() == b"data"
+    assert seen["ua"] == "custom-agent"
 
 
 def test_fetch_empty_manifest(tmp_path: Path) -> None:

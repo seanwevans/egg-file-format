@@ -1,4 +1,5 @@
 import pytest
+import zipfile
 from pathlib import Path
 from egg.manifest import _normalize_source
 from egg.composer import compose
@@ -57,6 +58,33 @@ cells:
     output = tmp_path / "new" / "demo.egg"
     compose(manifest, output)
     assert output.is_file()
+
+
+def test_string_runtime_dependency_included(tmp_path: Path) -> None:
+    dep = tmp_path / "python.img"
+    dep.write_text("py")
+
+    src = tmp_path / "code.py"
+    src.write_text("print('hi')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python.img
+"""
+    )
+
+    output = tmp_path / "demo.egg"
+    compose(manifest, output, dependencies=[str(dep)])
+
+    with zipfile.ZipFile(output) as zf:
+        assert "runtime/python.img" in zf.namelist()
 
 
 def test_normalize_source_traversal(tmp_path: Path) -> None:

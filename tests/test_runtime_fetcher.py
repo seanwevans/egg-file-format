@@ -279,7 +279,7 @@ dependencies:
 
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
 
-    def fail(url, *, timeout=None):
+    def fail(req, *, timeout=None):
         assert timeout == 30.0
         raise urllib.error.URLError("boom")
 
@@ -307,9 +307,9 @@ dependencies:
 
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
 
-    def fail(url, *, timeout=None):
+    def fail(req, *, timeout=None):
         assert timeout == 30.0
-        raise urllib.error.HTTPError(url, 404, "nope", None, None)
+        raise urllib.error.HTTPError(req.full_url, 404, "nope", None, None)
 
     monkeypatch.setattr(runtime_fetcher, "urlopen", fail)
     with pytest.raises(
@@ -335,7 +335,7 @@ dependencies:
 
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
 
-    def fail(url, *, timeout=None):
+    def fail(req, *, timeout=None):
         assert timeout == 30.0
         raise socket.timeout("too slow")
 
@@ -365,7 +365,7 @@ dependencies:
     monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
     monkeypatch.delenv("EGG_DOWNLOAD_TIMEOUT", raising=False)
 
-    def fail(url, *, timeout=None):
+    def fail(req, *, timeout=None):
         assert timeout == 30.0
         raise urllib.error.URLError("boom")
 
@@ -404,7 +404,7 @@ dependencies:
         def __exit__(self, exc_type, exc, tb):
             return False
 
-    def succeed(url, *, timeout=None):
+    def succeed(req, *, timeout=None):
         assert timeout == 12.5
         return Dummy(b"ok")
 

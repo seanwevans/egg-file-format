@@ -1,4 +1,8 @@
-"""Utilities for path checks, language command lookup, and plug-in loading via entry points."""
+"""Common helpers for path validation, command resolution, and plug-in loading.
+
+Provides ``_is_relative_to`` for safe path checks, ``get_lang_command`` for
+determining runtime commands, and ``load_plugins`` to discover plug-ins.
+"""
 
 from __future__ import annotations
 

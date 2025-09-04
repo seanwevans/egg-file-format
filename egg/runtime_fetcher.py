@@ -12,7 +12,7 @@ import hashlib
 import logging
 import os
 from urllib.parse import quote
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import socket
 from pathlib import Path, PurePosixPath
@@ -52,6 +52,7 @@ def _download_container(
     timeout: float | None = None,
     *,
     expected_digest: str | None = None,
+    user_agent: str = "egg-runtime-fetcher",
 ) -> Path:
     """Download ``image`` from ``base_url`` to ``dest``.
 
@@ -66,6 +67,9 @@ def _download_container(
         digest are trusted; missing or mismatched digests trigger a
         re-download. After downloading, if the checksum does not match,
         ``RuntimeError`` is raised.
+    user_agent : str, optional
+        ``User-Agent`` header sent with the download request. Defaults to
+        ``"egg-runtime-fetcher"``.
 
     A ``ValueError`` is raised if ``dest`` resolves outside its parent
     directory.  This prevents a malicious symlink from redirecting the
@@ -109,8 +113,9 @@ def _download_container(
     url = f"{base_url.rstrip('/')}/{quote(image)}.img"
     logger.info("[runtime_fetcher] downloading %s -> %s", url, dest)
     tmp = dest.with_suffix(".tmp")
+    req = Request(url, headers={"User-Agent": user_agent})
     try:
-        with urlopen(url, timeout=timeout) as resp, open(tmp, "wb") as fh:
+        with urlopen(req, timeout=timeout) as resp, open(tmp, "wb") as fh:
             # ``urlopen`` responses provide a ``headers`` mapping. Test
             # doubles used in this project may omit the attribute, so fall back
             # to an empty mapping to avoid ``AttributeError``.
