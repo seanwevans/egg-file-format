@@ -256,3 +256,56 @@ def test_cli_precompute_timeout(monkeypatch, tmp_path: Path) -> None:
 
     assert called == [7.0]
     assert output.is_file()
+
+
+def test_precompute_cells_plugin(monkeypatch, tmp_path: Path) -> None:
+    import egg.utils as utils
+
+    class DummyEP:
+        def __init__(self, name, func):
+            self.name = name
+            self._func = func
+
+        def load(self):
+            return self._func
+
+    def runtime():
+        return {"dummy": ["dummycmd"]}
+
+    class Container:
+        def select(self, *, group):
+            if group == utils.RUNTIME_PLUGIN_GROUP:
+                return [DummyEP("dummy", runtime)]
+            return []
+
+    monkeypatch.setattr(utils, "entry_points", lambda: Container())
+    monkeypatch.setattr(utils, "LOADED_RUNTIME_PLUGINS", set())
+
+    src = tmp_path / "hello.dummy"
+    src.write_text("print('hi')\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: dummy
+    source: hello.dummy
+"""
+    )
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, stdout=None, **kwargs):
+        calls.append(cmd)
+        if stdout:
+            stdout.write("out\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(shutil, "which", lambda c: c)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    outputs = precompute_cells(manifest)
+    out_file = tmp_path / "hello.dummy.out"
+    assert outputs == [out_file]
+    assert calls[0][0] == "dummycmd"
