@@ -1,6 +1,10 @@
-from __future__ import annotations
+"""Manifest parsing utilities and data structures.
 
-"""Data structures and helpers for reading ``manifest.yaml`` files."""
+Defines dataclasses for cells and the top-level manifest and validates
+``manifest.yaml`` files when loading.
+"""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
