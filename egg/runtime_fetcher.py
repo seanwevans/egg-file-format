@@ -23,6 +23,9 @@ from .utils import _is_relative_to
 
 _CHUNK_SIZE = 8192
 _PROGRESS_INTERVAL = 1 << 20  # 1 MiB
+_CACHE_DIR_NAME = ".egg_runtime"
+_CACHE_MARKER_NAME = ".managed-by-egg-runtime-fetcher"
+_CACHE_MARKER_CONTENTS = "Managed by egg.runtime_fetcher; safe to delete.\n"
 
 try:
     import yaml
@@ -43,6 +46,38 @@ def _get_registry_url() -> str | None:
     if conf.is_file():
         return conf.read_text().strip()
     return None
+
+
+def _ensure_cache_dir(cache_dir: Path) -> Path:
+    """Ensure ``cache_dir`` exists and is managed by the runtime fetcher."""
+
+    cache_dir = cache_dir.resolve(strict=False)
+    marker = cache_dir / _CACHE_MARKER_NAME
+
+    if cache_dir.exists():
+        if not cache_dir.is_dir():
+            raise ValueError(
+                f"Runtime cache path exists but is not a directory: {cache_dir}"
+            )
+        if not marker.is_file():
+            raise ValueError(
+                f"Runtime cache directory lacks marker file: {cache_dir}"
+            )
+        try:
+            contents = marker.read_text()
+        except OSError as exc:  # pragma: no cover - filesystem failure
+            raise RuntimeError(
+                f"Unable to read runtime cache marker at {marker}: {exc}"
+            ) from exc
+        if contents != _CACHE_MARKER_CONTENTS:
+            raise ValueError(
+                f"Runtime cache marker mismatch in {cache_dir}; refusing to overwrite"
+            )
+        return cache_dir
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    marker.write_text(_CACHE_MARKER_CONTENTS)
+    return cache_dir
 
 
 def _download_container(
@@ -226,6 +261,7 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
     # dependency strings when a clash occurs.
     safe_names: dict[str, str] = {}
     registry = _get_registry_url()
+    cache_dir: Path | None = None
 
     for dep in deps:
         if not isinstance(dep, str):
@@ -247,6 +283,12 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
                 raise ValueError(f"Invalid container image name: {dep}")
 
             if registry:
+                if cache_dir is None:
+                    cache_dir = _ensure_cache_dir(manifest_dir / _CACHE_DIR_NAME)
+                    if not _is_relative_to(cache_dir, manifest_dir):
+                        raise ValueError(
+                            f"Runtime cache escapes manifest directory: {cache_dir}"
+                        )
                 safe = dep.replace("/", "_").replace("\\", "_").replace(":", "_")
                 if safe in safe_names:
                     other = safe_names[safe]
@@ -255,7 +297,11 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
                         f"{dep!r} and {other!r} both map to {safe!r}"
                     )
                 safe_names[safe] = dep
-                dest = (manifest_dir / f"{safe}.img").resolve(strict=False)
+                dest = (cache_dir / f"{safe}.img").resolve(strict=False)
+                if not _is_relative_to(dest, cache_dir):
+                    raise ValueError(
+                        f"Dependency path escapes manifest directory: {dep}"
+                    )
                 if not _is_relative_to(dest, manifest_dir):
                     raise ValueError(
                         f"Dependency path escapes manifest directory: {dep}"

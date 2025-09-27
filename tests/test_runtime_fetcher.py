@@ -169,11 +169,14 @@ dependencies:
     )
 
     paths = fetch_runtime_blocks(manifest)
-    expected = tmp_path / "python_3.11.img"
+    expected = tmp_path / ".egg_runtime" / "python_3.11.img"
     server.shutdown()
     thread.join()
     assert paths == [expected]
     assert expected.read_text() == "image"
+    marker = expected.parent / runtime_fetcher._CACHE_MARKER_NAME
+    assert marker.is_file()
+    assert marker.read_text() == runtime_fetcher._CACHE_MARKER_CONTENTS
 
 
 def test_registry_download_env_repo(monkeypatch, tmp_path: Path) -> None:
@@ -199,7 +202,7 @@ dependencies:
     )
 
     paths = fetch_runtime_blocks(manifest)
-    expected = tmp_path / "library_python_3.11.img"
+    expected = tmp_path / ".egg_runtime" / "library_python_3.11.img"
     server.shutdown()
     thread.join()
     assert paths == [expected]
@@ -233,11 +236,93 @@ dependencies:
     )
 
     paths = fetch_runtime_blocks(manifest)
-    expected = tmp_path / "r_4.3.img"
+    expected = tmp_path / ".egg_runtime" / "r_4.3.img"
     server.shutdown()
     thread.join()
     assert paths == [expected]
     assert expected.read_text() == "rimage"
+
+
+def test_runtime_cache_without_marker(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    cache_dir = tmp_path / ".egg_runtime"
+    cache_dir.mkdir()
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+    with pytest.raises(ValueError, match="marker"):
+        fetch_runtime_blocks(manifest)
+
+
+def test_runtime_cache_marker_mismatch(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    cache_dir = tmp_path / ".egg_runtime"
+    cache_dir.mkdir()
+    (cache_dir / runtime_fetcher._CACHE_MARKER_NAME).write_text("not-right\n")
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    monkeypatch.setenv("EGG_REGISTRY_URL", "http://example.com")
+    with pytest.raises(ValueError, match="marker mismatch"):
+        fetch_runtime_blocks(manifest)
+
+
+def test_runtime_cache_reuse(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "code.py").write_text("print('hi')\n")
+    cache_dir = tmp_path / ".egg_runtime"
+    cache_dir.mkdir()
+    marker = cache_dir / runtime_fetcher._CACHE_MARKER_NAME
+    marker.write_text(runtime_fetcher._CACHE_MARKER_CONTENTS)
+    cached = cache_dir / "python_3.11.img"
+    cached.write_text("stale")
+
+    server, thread = _start_server(tmp_path)
+    registry_url = f"http://localhost:{server.server_address[1]}"
+    monkeypatch.setenv("EGG_REGISTRY_URL", registry_url)
+
+    (tmp_path / "python:3.11.img").write_text("fresh")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - python:3.11
+"""
+    )
+
+    paths = fetch_runtime_blocks(manifest)
+    server.shutdown()
+    thread.join()
+
+    assert paths == [cached]
+    assert cached.read_text() == "fresh"
+    assert marker.read_text() == runtime_fetcher._CACHE_MARKER_CONTENTS
 
 
 def test_registry_traversal_rejected(monkeypatch, tmp_path: Path) -> None:
@@ -410,7 +495,7 @@ dependencies:
 
     monkeypatch.setattr(runtime_fetcher, "urlopen", succeed)
     paths = fetch_runtime_blocks(manifest)
-    expected = tmp_path / "python_3.11.img"
+    expected = tmp_path / ".egg_runtime" / "python_3.11.img"
     assert paths == [expected]
     assert expected.read_bytes() == b"ok"
 
