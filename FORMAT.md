@@ -74,8 +74,10 @@ these manifest entries.
 ### Runtime Blocks Directory
 
 Local dependency files resolved by the runtime block fetcher are included
-in the archive under the `runtime/` directory using their original file
-names. Container-style entries like `python:3.11` are recorded in the
+in the archive under the `runtime/` directory while preserving their
+paths relative to the manifest directory. Nested folders are created as
+needed so that assets such as `envs/python/python.img` remain grouped
+together. Container-style entries like `python:3.11` are recorded in the
 manifest but are not bundled into the egg.
 
 ### Breadth-First Loading

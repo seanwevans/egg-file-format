@@ -75,18 +75,28 @@ def compose(
         # copy runtime dependencies under runtime/
         runtime_dir = tmpdir_path / "runtime"
         seen_runtime: set[str] = set()
+        manifest_dir_resolved = manifest_dir.resolve()
         if dependencies:
             for dep in dependencies:
                 if isinstance(dep, str) and ":" in dep:
                     continue
-                dep = Path(dep)
-                dest_name = dep.name
-                if dest_name in seen_runtime:
-                    raise ValueError(f"Duplicate dependency filename: {dest_name}")
-                seen_runtime.add(dest_name)
-                dest = runtime_dir / dest_name
+                dep_path = Path(dep)
+                dep_resolved = dep_path.resolve()
+                try:
+                    relative = dep_resolved.relative_to(manifest_dir_resolved)
+                except ValueError as exc:
+                    raise ValueError(
+                        "Runtime dependency must be located within the manifest directory"
+                    ) from exc
+                relative_posix = relative.as_posix()
+                if relative_posix in seen_runtime:
+                    raise ValueError(
+                        f"Duplicate runtime dependency path: {relative_posix}"
+                    )
+                seen_runtime.add(relative_posix)
+                dest = runtime_dir / relative
                 dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(dep, dest)
+                shutil.copy2(dep_resolved, dest)
                 copied.append(dest)
 
         # write hashes file and signature
