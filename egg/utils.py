@@ -66,11 +66,11 @@ def load_plugins() -> None:
     eps = entry_points()
 
     if hasattr(eps, "select"):
-        runtime_eps = eps.select(group=RUNTIME_PLUGIN_GROUP)
-        agent_eps = eps.select(group=AGENT_PLUGIN_GROUP)
+        runtime_eps = list(eps.select(group=RUNTIME_PLUGIN_GROUP))
+        agent_eps = list(eps.select(group=AGENT_PLUGIN_GROUP))
     else:  # pragma: no cover - compatibility
-        runtime_eps = eps.get(RUNTIME_PLUGIN_GROUP, [])
-        agent_eps = eps.get(AGENT_PLUGIN_GROUP, [])
+        runtime_eps = list(eps.get(RUNTIME_PLUGIN_GROUP, []))
+        agent_eps = list(eps.get(AGENT_PLUGIN_GROUP, []))
 
     for ep in runtime_eps:
         if ep.name in LOADED_RUNTIME_PLUGINS:
@@ -112,3 +112,19 @@ def load_plugins() -> None:
             logger.debug("[plugins] loaded agent %s", ep.name)
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading agent plug-in %s: %s", ep.name, exc)
+
+    if not runtime_eps and "ruby" not in DEFAULT_LANG_COMMANDS:
+        try:  # pragma: no cover - fallback when package not installed
+            from examples import ruby_plugin
+        except Exception as exc:  # pragma: no cover - defensive fallback
+            logger.debug("[plugins] example runtime unavailable: %s", exc)
+        else:
+            extra = ruby_plugin.register()
+            if isinstance(extra, dict):
+                for lang, cmd in extra.items():
+                    if (
+                        isinstance(lang, str)
+                        and isinstance(cmd, list)
+                        and all(isinstance(c, str) for c in cmd)
+                    ):
+                        DEFAULT_LANG_COMMANDS[lang] = cmd

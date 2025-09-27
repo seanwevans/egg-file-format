@@ -11,12 +11,9 @@ def test_normalize_source_absolute(tmp_path: Path) -> None:
 
 
 def test_duplicate_runtime_dependency(tmp_path: Path) -> None:
-    dep1 = tmp_path / "a" / "python.img"
-    dep2 = tmp_path / "b" / "python.img"
-    dep1.parent.mkdir()
-    dep2.parent.mkdir()
-    dep1.write_text("py")
-    dep2.write_text("py")
+    dep = tmp_path / "runtime" / "python.img"
+    dep.parent.mkdir()
+    dep.write_text("py")
 
     src = tmp_path / "code.py"
     src.write_text("print('hi')\n")
@@ -30,14 +27,42 @@ cells:
   - language: python
     source: code.py
 dependencies:
-  - a/python.img
-  - b/python.img
+  - runtime/python.img
+  - runtime/python.img
 """
     )
 
     output = tmp_path / "demo.egg"
     with pytest.raises(ValueError):
-        compose(manifest, output, dependencies=[dep1, dep2])
+        compose(manifest, output, dependencies=[dep, dep])
+
+
+def test_runtime_dependency_preserves_relative_path(tmp_path: Path) -> None:
+    nested = tmp_path / "runtimes" / "python" / "python.img"
+    nested.parent.mkdir(parents=True)
+    nested.write_text("py")
+
+    src = tmp_path / "code.py"
+    src.write_text("print('hi')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+dependencies:
+  - runtimes/python/python.img
+"""
+    )
+
+    output = tmp_path / "demo.egg"
+    compose(manifest, output, dependencies=[nested])
+
+    with zipfile.ZipFile(output) as zf:
+        assert "runtime/runtimes/python/python.img" in zf.namelist()
 
 
 def test_compose_creates_output_dir(tmp_path: Path) -> None:
