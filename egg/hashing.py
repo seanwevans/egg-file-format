@@ -180,10 +180,12 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
         for name, expected in hashes.items():
             try:
                 with zf.open(name) as fh:
-                    data = fh.read()
+                    digest = hashlib.sha256()
+                    for chunk in iter(lambda: fh.read(_CHUNK_SIZE), b""):
+                        digest.update(chunk)
             except KeyError:
                 return False
-            if hashlib.sha256(data).hexdigest() != expected:
+            if digest.hexdigest() != expected:
                 return False
 
         # Ensure no unverified files are present in the archive and there are no

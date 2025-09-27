@@ -5,6 +5,7 @@ import zipfile
 
 import pytest
 
+import egg.hashing as hashing
 from egg.hashing import (
     sha256_file,
     compute_hashes,
@@ -241,8 +242,8 @@ def test_sign_hashes_env_override(monkeypatch, tmp_path):
 def test_verify_archive_env_key(monkeypatch, tmp_path):
     """Verification should honor EGG_PUBLIC_KEY."""
     import importlib
-    import egg.hashing as hashing
 
+    global hashing
     sk = SigningKey(hashlib.sha256(b"secret").digest())
     monkeypatch.setenv("EGG_PRIVATE_KEY", "secret")
     monkeypatch.setenv("EGG_PUBLIC_KEY", sk.verify_key.encode().hex())
@@ -273,6 +274,44 @@ def test_verify_archive_env_key(monkeypatch, tmp_path):
     monkeypatch.setenv("EGG_PUBLIC_KEY", other_vk)
     hashing = importlib.reload(hashing)
     assert not hashing.verify_archive(archive)
+
+
+def test_verify_archive_large_file_streamed(monkeypatch, tmp_path: Path) -> None:
+    """Large files should be hashed incrementally when verifying archives."""
+
+    large_file = tmp_path / "large.bin"
+    large_file.write_bytes(b"0123456789ABCDEF" * ((hashing._CHUNK_SIZE * 5) // 16) + b"end")
+
+    hashes = hashing.compute_hashes([large_file], base_dir=tmp_path)
+    hashes_path = tmp_path / "hashes.yaml"
+    hashing.write_hashes_file(hashes, hashes_path)
+    sig_path = tmp_path / "hashes.sig"
+    sig_path.write_text(
+        hashing.sign_hashes(hashes_path, private_key=hashing.DEFAULT_PRIVATE_KEY)
+    )
+
+    archive = tmp_path / "large.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for path in [large_file, hashes_path, sig_path]:
+            zi = zipfile.ZipInfo(path.name)
+            zi.date_time = (1980, 1, 1, 0, 0, 0)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(path, "rb") as fh:
+                zf.writestr(zi, fh.read())
+
+    original_read = zipfile.ZipExtFile.read
+
+    def tracking_read(self, n=None):  # type: ignore[override]
+        if n is None:
+            n = -1
+        if getattr(self, "name", None) == large_file.name:
+            assert n is not None, "Large file was read without chunk size"
+            assert n <= hashing._CHUNK_SIZE, "Chunk read exceeds configured size"
+        return original_read(self, n)
+
+    monkeypatch.setattr(zipfile.ZipExtFile, "read", tracking_read)
+
+    assert hashing.verify_archive(archive)
 
 
 def test_load_hashes_empty_file(tmp_path: Path) -> None:
