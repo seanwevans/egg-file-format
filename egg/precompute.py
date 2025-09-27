@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 import shutil
 import sys
@@ -11,6 +12,16 @@ from typing import List
 from .manifest import load_manifest
 from .utils import get_lang_command, load_plugins
 from .hashing import sha256_file, write_hashes_file, load_hashes
+
+
+def _hash_command(cmd: List[str]) -> str:
+    """Return a stable hash for ``cmd`` used in the precompute cache."""
+
+    h = hashlib.sha256()
+    for part in cmd:
+        h.update(part.encode("utf-8"))
+        h.update(b"\0")
+    return h.hexdigest()
 
 
 def precompute_cells(
@@ -45,10 +56,13 @@ def precompute_cells(
         src_rel = Path(cell.source)
         src = manifest_dir / src_rel
         digest = sha256_file(src)
-        new_hashes[src_rel.as_posix()] = digest
+        cmd_digest = _hash_command(cmd)
+        cache_value = f"{digest}:{cmd_digest}"
+        new_hashes[src_rel.as_posix()] = cache_value
         out_file = src.with_name(src.name + ".out")
         err_file = src.with_name(src.name + ".err")
-        if prev_hashes.get(src_rel.as_posix()) == digest and out_file.exists():
+        prev_value = prev_hashes.get(src_rel.as_posix())
+        if prev_value == cache_value and out_file.exists():
             outputs.append(out_file)
             continue
         try:
