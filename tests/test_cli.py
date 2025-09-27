@@ -174,6 +174,60 @@ def test_hatch(monkeypatch, tmp_path, caplog, os_name, conf_file):
     assert cleanup_called["v"]
 
 
+def test_hatch_selective_extraction(monkeypatch, tmp_path):
+    """Hatching should only read manifest, sources, and runtime assets."""
+
+    egg_path = tmp_path / "demo.egg"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "egg_cli.py",
+            "build",
+            "--manifest",
+            os.path.join("examples", "manifest.yaml"),
+            "--output",
+            str(egg_path),
+        ],
+    )
+    egg_cli.main()
+
+    with zipfile.ZipFile(egg_path, "a") as zf:
+        zf.writestr("unused.txt", "ignore")
+        zf.writestr("runtime/custom.bin", b"data")
+
+    monkeypatch.setattr(egg_cli, "verify_archive", lambda *a, **kw: True)
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, check=True):
+        calls.append(cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(shutil, "which", lambda cmd: cmd)
+
+    opened: list[str] = []
+    real_open = zipfile.ZipFile.open
+
+    def tracking(self, name, *args, **kwargs):
+        if isinstance(name, zipfile.ZipInfo):
+            opened.append(name.filename)
+        else:
+            opened.append(name)
+        return real_open(self, name, *args, **kwargs)
+
+    monkeypatch.setattr(zipfile.ZipFile, "open", tracking)
+
+    monkeypatch.setattr(sys, "argv", ["egg_cli.py", "hatch", "--egg", str(egg_path)])
+    egg_cli.main()
+
+    assert any(cmd[1].endswith("hello.py") for cmd in calls)
+    assert "manifest.yaml" in opened
+    assert any(name.endswith("hello.py") for name in opened)
+    assert "runtime/custom.bin" in opened
+    assert "unused.txt" not in opened
+
+
 def test_hatch_no_sandbox(monkeypatch, tmp_path, caplog):
     egg_path = tmp_path / "demo.egg"
 
