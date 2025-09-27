@@ -60,9 +60,7 @@ def _ensure_cache_dir(cache_dir: Path) -> Path:
                 f"Runtime cache path exists but is not a directory: {cache_dir}"
             )
         if not marker.is_file():
-            raise ValueError(
-                f"Runtime cache directory lacks marker file: {cache_dir}"
-            )
+            raise ValueError(f"Runtime cache directory lacks marker file: {cache_dir}")
         try:
             contents = marker.read_text()
         except OSError as exc:  # pragma: no cover - filesystem failure

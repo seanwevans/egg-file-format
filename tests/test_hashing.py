@@ -280,7 +280,9 @@ def test_verify_archive_large_file_streamed(monkeypatch, tmp_path: Path) -> None
     """Large files should be hashed incrementally when verifying archives."""
 
     large_file = tmp_path / "large.bin"
-    large_file.write_bytes(b"0123456789ABCDEF" * ((hashing._CHUNK_SIZE * 5) // 16) + b"end")
+    large_file.write_bytes(
+        b"0123456789ABCDEF" * ((hashing._CHUNK_SIZE * 5) // 16) + b"end"
+    )
 
     hashes = hashing.compute_hashes([large_file], base_dir=tmp_path)
     hashes_path = tmp_path / "hashes.yaml"
