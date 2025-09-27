@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from egg.utils import get_lang_command  # noqa: E402
-from egg.precompute import precompute_cells  # noqa: E402
+from egg.precompute import precompute_cells, _hash_command  # noqa: E402
 from egg.hashing import load_hashes, sha256_file  # noqa: E402
 import egg_cli  # noqa: E402
 
@@ -155,7 +155,8 @@ def test_precompute_caches_results(monkeypatch, tmp_path: Path) -> None:
     precompute_cells(manifest)
     assert cache.is_file()
     first_hash = load_hashes(cache)["hello.py"]
-    assert sha256_file(src) == first_hash
+    expected_cmd = get_lang_command("python")
+    assert first_hash == f"{sha256_file(src)}:{_hash_command(expected_cmd)}"
     calls.clear()
 
     precompute_cells(manifest)
@@ -187,6 +188,39 @@ def test_precompute_cache_invalidated(monkeypatch, tmp_path: Path) -> None:
     src.write_text("print('changed')\n")
     precompute_cells(manifest)
     assert len(calls) == 1
+
+
+def test_precompute_cache_invalidated_on_command_change(
+    monkeypatch, tmp_path: Path
+) -> None:
+    src = tmp_path / "hello.py"
+    src.write_text("print('hi')\n")
+    manifest = _write_manifest(tmp_path / "manifest.yaml")
+
+    monkeypatch.setattr(shutil, "which", lambda c: c)
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, stdout=None, **kwargs):
+        calls.append(cmd)
+        if stdout:
+            stdout.write("out\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    precompute_cells(manifest)
+    calls.clear()
+
+    monkeypatch.setenv("EGG_CMD_PYTHON", f"{sys.executable} -u")
+
+    precompute_cells(manifest)
+    assert len(calls) == 1
+
+    cache = tmp_path / "precompute_hashes.yaml"
+    new_hash = load_hashes(cache)["hello.py"]
+    expected = f"{sha256_file(src)}:{_hash_command(get_lang_command('python'))}"
+    assert new_hash == expected
 
 
 def test_precompute_cells_passes_timeout(monkeypatch, tmp_path: Path) -> None:
