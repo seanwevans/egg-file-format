@@ -79,13 +79,44 @@ def hatch(args: argparse.Namespace) -> None:
         raise SystemExit("Hash verification failed")
 
     with zipfile.ZipFile(egg_path) as zf, tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        members: dict[str, str] = {}
         for name in zf.namelist():
             p = PurePosixPath(name)
             if p.is_absolute() or ".." in p.parts:
                 raise SystemExit(f"Unsafe path in archive: {name}")
-        zf.extractall(tmpdir)
-        manifest_path = Path(tmpdir) / "manifest.yaml"
+            if name.endswith("/"):
+                continue  # directories are created on demand
+            members[p.as_posix()] = name
+
+        try:
+            with zf.open("manifest.yaml") as manifest_file:
+                manifest_bytes = manifest_file.read()
+        except KeyError:
+            raise SystemExit("manifest.yaml not found in archive")
+
+        manifest_path = tmp_path / "manifest.yaml"
+        manifest_path.write_bytes(manifest_bytes)
         manifest = load_manifest(manifest_path)
+
+        extracted: set[str] = set()
+
+        def extract_member(member_name: str) -> Path:
+            if member_name in extracted:
+                return tmp_path / member_name
+            if member_name not in members:
+                raise SystemExit(f"Missing file in archive: {member_name}")
+            dest = tmp_path / member_name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(members[member_name]) as src, open(dest, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+            extracted.add(member_name)
+            return dest
+
+        # Ensure bundled runtime assets are available if present.
+        for name in members:
+            if name.startswith("runtime/"):
+                extract_member(name)
 
         if args.no_sandbox:
             logger.warning("[hatch] Running without sandbox (unsafe)")
@@ -98,7 +129,7 @@ def hatch(args: argparse.Namespace) -> None:
 
         try:
             for cell in manifest.cells:
-                src = Path(tmpdir) / cell.source
+                src = extract_member(cell.source)
                 lang = cell.language.lower()
                 base_cmd = get_lang_command(lang)
                 if base_cmd is None:
