@@ -1,4 +1,5 @@
 # 🥚 egg file format
+<img width="256" alt="Can I offer you an egg in this trying time?" src="https://github.com/user-attachments/assets/4dfe4f32-ba83-4a6c-b075-6181da850b5f" />
 
 
 [![Coverage](https://img.shields.io/badge/coverage-96%25-cyan)](https://img.shields.io)
