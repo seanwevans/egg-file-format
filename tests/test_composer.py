@@ -120,3 +120,35 @@ def test_normalize_source_traversal(tmp_path: Path) -> None:
 def test_normalize_source_valid_relative(tmp_path: Path) -> None:
     normalized = _normalize_source("sub/../good.py", tmp_path)
     assert normalized == "good.py"
+
+
+def test_compose_cleans_temp_archive_on_failure(tmp_path: Path, monkeypatch) -> None:
+    src = tmp_path / "code.py"
+    src.write_text("print('hi')\n")
+
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        """
+name: Example
+description: desc
+cells:
+  - language: python
+    source: code.py
+"""
+    )
+
+    output = tmp_path / "demo.egg"
+    output.write_bytes(b"old archive bytes")
+
+    original_writestr = zipfile.ZipFile.writestr
+
+    def failing_writestr(self, *args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(zipfile.ZipFile, "writestr", failing_writestr)
+    with pytest.raises(RuntimeError, match="boom"):
+        compose(manifest, output)
+    monkeypatch.setattr(zipfile.ZipFile, "writestr", original_writestr)
+
+    assert output.read_bytes() == b"old archive bytes"
+    assert not list(tmp_path.glob("*.tmp"))
