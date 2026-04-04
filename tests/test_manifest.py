@@ -307,6 +307,82 @@ cells:
     assert manifest.license == "MIT"
 
 
+def test_created_accepts_iso_date(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+created: "2026-04-04"
+cells: []
+"""
+    )
+    manifest = load_manifest(path)
+    assert manifest.created == "2026-04-04"
+
+
+def test_created_accepts_iso_datetime_with_offset(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+created: "2026-04-04T12:30:00+00:00"
+cells: []
+"""
+    )
+    manifest = load_manifest(path)
+    assert manifest.created == "2026-04-04T12:30:00+00:00"
+
+
+def test_created_rejects_non_iso_string_with_example_message(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+created: "04/04/2026"
+cells: []
+"""
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"'created' must be an ISO-8601 date or datetime string .*'2026-04-04'.*",
+    ):
+        load_manifest(path)
+
+
+def test_license_accepts_spdx_expression(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+license: "(MIT OR Apache-2.0)"
+cells: []
+"""
+    )
+    manifest = load_manifest(path)
+    assert manifest.license == "(MIT OR Apache-2.0)"
+
+
+def test_license_rejects_non_spdx_string_with_example_message(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        """
+name: Example
+description: desc
+license: "MIT/Apache"
+cells: []
+"""
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"'license' must look like a basic SPDX expression .*'MIT'.*",
+    ):
+        load_manifest(path)
+
+
 def test_author_must_be_string(tmp_path: Path) -> None:
     path = tmp_path / "manifest.yaml"
     path.write_text(
