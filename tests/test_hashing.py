@@ -173,10 +173,10 @@ def test_verify_archive_missing_file(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     "content",
-    ["- a\n- b\n", "foo: 1\n", "1: foo\n"],
+    ["- a\n- b\n", "foo: 1\n", "1: foo\n", "{\n"],
 )
 def test_verify_archive_invalid_hashes_yaml(tmp_path: Path, content: str) -> None:
-    """Invalid hashes.yaml content should raise ValueError."""
+    """Invalid hashes.yaml content should fail verification."""
     hashes_path = tmp_path / "hashes.yaml"
     hashes_path.write_text(content)
     sig_path = tmp_path / "hashes.sig"
@@ -189,8 +189,22 @@ def test_verify_archive_invalid_hashes_yaml(tmp_path: Path, content: str) -> Non
             zi.compress_type = zipfile.ZIP_DEFLATED
             with open(path, "rb") as f:
                 zf.writestr(zi, f.read())
-    with pytest.raises(ValueError):
-        verify_archive(archive)
+    assert not verify_archive(archive)
+
+
+def test_verify_archive_non_hex_signature(tmp_path: Path) -> None:
+    """Non-hex signature content should fail verification."""
+    foo = tmp_path / "foo.txt"
+    foo.write_text("A")
+    hashes = compute_hashes([foo], base_dir=tmp_path)
+    hashes_path = tmp_path / "hashes.yaml"
+    write_hashes_file(hashes, hashes_path)
+    archive = tmp_path / "demo.egg"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.write(foo, arcname=foo.name)
+        zf.write(hashes_path, arcname="hashes.yaml")
+        zf.writestr("hashes.sig", "not-hex")
+    assert not verify_archive(archive)
 
 
 def test_hashing_import_guard(monkeypatch):

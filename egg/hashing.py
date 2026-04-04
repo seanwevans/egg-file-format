@@ -162,7 +162,7 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
                 hashes_bytes = f.read()
             with zf.open("hashes.sig") as f:
                 signature = bytes.fromhex(f.read().decode().strip())
-        except KeyError:
+        except (KeyError, ValueError):
             return False
 
         try:
@@ -170,12 +170,15 @@ def verify_archive(archive: Path, *, public_key: bytes | None = None) -> bool:
         except BadSignatureError:
             return False
 
-        hashes = yaml.safe_load(hashes_bytes) or {}
+        try:
+            hashes = yaml.safe_load(hashes_bytes) or {}
+        except yaml.YAMLError:
+            return False
         if not isinstance(hashes, dict):
-            raise ValueError("hashes.yaml must contain a mapping")
+            return False
         for key, value in hashes.items():
             if not isinstance(key, str) or not isinstance(value, str):
-                raise ValueError("hashes.yaml keys and values must be strings")
+                return False
 
         for name, expected in hashes.items():
             try:
