@@ -17,7 +17,12 @@ from egg.manifest import load_manifest
 from egg.sandboxer import prepare_images
 from egg.runtime_fetcher import fetch_runtime_blocks
 from egg.precompute import precompute_cells
-from egg.utils import DEFAULT_LANG_COMMANDS, get_lang_command, load_plugins
+from egg.utils import (
+    DEFAULT_LANG_COMMANDS,
+    get_lang_command,
+    load_plugins,
+    validate_lang_command,
+)
 
 
 __version__ = "0.1.0"
@@ -134,6 +139,7 @@ def hatch(args: argparse.Namespace) -> None:
                 base_cmd = get_lang_command(lang)
                 if base_cmd is None:
                     raise SystemExit(f"Unsupported language: {cell.language}")
+                base_cmd = validate_lang_command(base_cmd, lang)
                 cmd = base_cmd[0]
                 if shutil.which(cmd) is None:
                     raise SystemExit(

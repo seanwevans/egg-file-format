@@ -2,6 +2,7 @@ import os
 import sys
 import importlib
 from pathlib import Path
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
@@ -90,10 +91,26 @@ def test_load_plugins_invalid_runtime(monkeypatch, caplog):
 
     monkeypatch.setattr(mod, "entry_points", lambda: eps)
     with caplog.at_level("WARNING"):
-        mod.load_plugins()
+        with pytest.raises(ValueError) as exc:
+            mod.load_plugins()
 
-    assert "invalid mapping" in caplog.text
+    assert "runtime plug-in 'ruby'" in str(exc.value)
     assert "ruby" not in mod.DEFAULT_LANG_COMMANDS
+
+
+def test_validate_lang_command_rejects_whitespace_executable(monkeypatch):
+    mod = _reset_utils(monkeypatch)
+    with pytest.raises(ValueError) as exc:
+        mod.validate_lang_command(["   ", "-u"], "python")
+    assert "whitespace-only" in str(exc.value)
+
+
+def test_get_lang_command_invalid_env(monkeypatch):
+    mod = _reset_utils(monkeypatch)
+    monkeypatch.setenv("EGG_CMD_PYTHON", "   ")
+    with pytest.raises(ValueError) as exc:
+        mod.get_lang_command("python")
+    assert "EGG_CMD_PYTHON" in str(exc.value)
 
 
 def test_is_relative_to_inside(tmp_path: Path) -> None:

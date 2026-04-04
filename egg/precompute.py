@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List
 
 from .manifest import load_manifest
-from .utils import get_lang_command, load_plugins
+from .utils import get_lang_command, load_plugins, validate_lang_command
 from .hashing import sha256_file, write_hashes_file, load_hashes
 
 
@@ -49,6 +49,7 @@ def precompute_cells(
         cmd = get_lang_command(lang)
         if cmd is None:
             raise ValueError(f"Unsupported language: {cell.language}")
+        cmd = validate_lang_command(cmd, lang)
         if shutil.which(cmd[0]) is None:
             raise FileNotFoundError(
                 f"Required runtime '{cmd[0]}' for {cell.language} cells not found"
