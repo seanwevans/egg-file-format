@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import tempfile
 import zipfile
@@ -109,11 +110,30 @@ def compose(
         sig_path.write_text(sig, encoding="utf-8")
         copied.extend([hashes_path, sig_path])
 
-        with zipfile.ZipFile(output_path, "w") as zf:
-            for file in sorted(copied, key=lambda p: str(p.relative_to(tmpdir_path))):
-                rel = file.relative_to(tmpdir_path)
-                zi = zipfile.ZipInfo(rel.as_posix())
-                zi.date_time = (1980, 1, 1, 0, 0, 0)
-                zi.compress_type = zipfile.ZIP_DEFLATED
-                with open(file, "rb") as f:
-                    zf.writestr(zi, f.read())
+        temp_archive_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w+b",
+                delete=False,
+                dir=output_path.parent,
+                suffix=".tmp",
+            ) as temp_archive:
+                temp_archive_path = Path(temp_archive.name)
+                with zipfile.ZipFile(temp_archive, "w") as zf:
+                    for file in sorted(
+                        copied, key=lambda p: str(p.relative_to(tmpdir_path))
+                    ):
+                        rel = file.relative_to(tmpdir_path)
+                        zi = zipfile.ZipInfo(rel.as_posix())
+                        zi.date_time = (1980, 1, 1, 0, 0, 0)
+                        zi.compress_type = zipfile.ZIP_DEFLATED
+                        with open(file, "rb") as f:
+                            zf.writestr(zi, f.read())
+                temp_archive.flush()
+                os.fsync(temp_archive.fileno())
+
+            temp_archive_path.replace(output_path)
+        except Exception:
+            if temp_archive_path is not None and temp_archive_path.exists():
+                temp_archive_path.unlink()
+            raise
