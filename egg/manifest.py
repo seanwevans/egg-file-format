@@ -6,7 +6,9 @@ Defines dataclasses for cells and the top-level manifest and validates
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import List
 
@@ -52,6 +54,80 @@ def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
     if not _is_relative_to(abs_path, manifest_dir):
         raise ValueError(f"Source path escapes manifest directory: {path}")
     return abs_path.relative_to(manifest_dir).as_posix()
+
+
+_SPDX_TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]*\+?$")
+
+
+def _validate_created(value: str) -> None:
+    """Validate the ``created`` field as an ISO-8601 date/datetime string."""
+    examples = "'2026-04-04', '2026-04-04T12:30:00Z'"
+    try:
+        # Accept plain calendar dates, e.g. YYYY-MM-DD.
+        date.fromisoformat(value)
+        return
+    except ValueError:
+        pass
+
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        # Accept full datetime timestamps.
+        datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError(
+            f"'created' must be an ISO-8601 date or datetime string (examples: "
+            f"{examples}). Got: {value!r}"
+        ) from exc
+
+
+def _validate_license(value: str) -> None:
+    """Validate ``license`` as a basic SPDX token/expression."""
+    examples = "'MIT', 'Apache-2.0', '(MIT OR Apache-2.0)'"
+    allowed = re.fullmatch(r"[A-Za-z0-9().+\- ]+", value)
+    if not allowed:
+        raise ValueError(
+            f"'license' must look like a basic SPDX expression (examples: {examples}). "
+            f"Got: {value!r}"
+        )
+
+    token = ""
+    saw_identifier = False
+    i = 0
+    while i < len(value):
+        ch = value[i]
+        if ch in {"(", ")", " "}:
+            if token:
+                if token in {"AND", "OR", "WITH"}:
+                    pass
+                elif _SPDX_TOKEN_RE.match(token):
+                    saw_identifier = True
+                else:
+                    raise ValueError(
+                        f"'license' must look like a basic SPDX expression "
+                        f"(examples: {examples}). Got: {value!r}"
+                    )
+                token = ""
+            i += 1
+            continue
+        token += ch
+        i += 1
+
+    if token:
+        if token in {"AND", "OR", "WITH"}:
+            pass
+        elif _SPDX_TOKEN_RE.match(token):
+            saw_identifier = True
+        else:
+            raise ValueError(
+                f"'license' must look like a basic SPDX expression "
+                f"(examples: {examples}). Got: {value!r}"
+            )
+
+    if not saw_identifier:
+        raise ValueError(
+            f"'license' must look like a basic SPDX expression (examples: {examples}). "
+            f"Got: {value!r}"
+        )
 
 
 def load_manifest(path: Path | str) -> Manifest:
@@ -132,10 +208,14 @@ def load_manifest(path: Path | str) -> Manifest:
     created_data = data.get("created")
     if created_data is not None and not isinstance(created_data, str):
         raise ValueError("'created' must be a string")
+    if isinstance(created_data, str):
+        _validate_created(created_data)
 
     license_data = data.get("license")
     if license_data is not None and not isinstance(license_data, str):
         raise ValueError("'license' must be a string")
+    if isinstance(license_data, str):
+        _validate_license(license_data)
 
     manifest_dir = Path(path).resolve().parent
     cells: List[Cell] = []
