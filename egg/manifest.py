@@ -54,6 +54,44 @@ def _normalize_source(path: str | Path, manifest_dir: Path) -> str:
     return abs_path.relative_to(manifest_dir).as_posix()
 
 
+def _load_manifest_yaml(path: Path | str) -> dict:
+    """Load raw manifest YAML data and ensure the root is a mapping."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        raise ValueError("Manifest root must be a mapping")
+    return data
+
+
+def _validate_dependencies(deps_data: object) -> List[str] | None:
+    """Validate and normalize ``dependencies`` data from a manifest."""
+    dependencies: List[str] | None
+    if deps_data is None:
+        dependencies = None
+    else:
+        if not isinstance(deps_data, list):
+            raise ValueError("'dependencies' must be a list")
+        dep_set: set[str] = set()
+        dependencies = []
+        for dep in deps_data:
+            if not isinstance(dep, str):
+                raise ValueError("dependency entries must be strings")
+            if dep in dep_set:
+                raise ValueError(f"Duplicate dependency: {dep}")
+            dep_set.add(dep)
+            dependencies.append(dep)
+    return dependencies
+
+
+def load_manifest_dependencies(path: Path | str) -> List[str] | None:
+    """Load and validate only the ``dependencies`` section of a manifest."""
+    data = _load_manifest_yaml(path)
+    return _validate_dependencies(data.get("dependencies"))
+
+
 def load_manifest(path: Path | str) -> Manifest:
     """Load a manifest from a YAML file.
 
@@ -66,11 +104,7 @@ def load_manifest(path: Path | str) -> Manifest:
     Raises:
         ValueError: If required fields are missing or malformed.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    if not isinstance(data, dict):
-        raise ValueError("Manifest root must be a mapping")
+    data = _load_manifest_yaml(path)
 
     required_fields = {"name", "description", "cells"}
     optional_fields = {"permissions", "dependencies", "author", "created", "license"}
@@ -108,22 +142,7 @@ def load_manifest(path: Path | str) -> Manifest:
                 raise ValueError(f"Permission '{perm}' must be a boolean")
             permissions[perm] = val
 
-    deps_data = data.get("dependencies")
-    dependencies: List[str] | None
-    if deps_data is None:
-        dependencies = None
-    else:
-        if not isinstance(deps_data, list):
-            raise ValueError("'dependencies' must be a list")
-        dep_set: set[str] = set()
-        dependencies = []
-        for dep in deps_data:
-            if not isinstance(dep, str):
-                raise ValueError("dependency entries must be strings")
-            if dep in dep_set:
-                raise ValueError(f"Duplicate dependency: {dep}")
-            dep_set.add(dep)
-            dependencies.append(dep)
+    dependencies = _validate_dependencies(data.get("dependencies"))
 
     author_data = data.get("author")
     if author_data is not None and not isinstance(author_data, str):

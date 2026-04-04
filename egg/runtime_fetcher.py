@@ -18,6 +18,7 @@ import socket
 from pathlib import Path, PurePosixPath
 from typing import List
 
+from .manifest import load_manifest_dependencies
 from .utils import _is_relative_to
 
 
@@ -26,13 +27,6 @@ _PROGRESS_INTERVAL = 1 << 20  # 1 MiB
 _CACHE_DIR_NAME = ".egg_runtime"
 _CACHE_MARKER_NAME = ".managed-by-egg-runtime-fetcher"
 _CACHE_MARKER_CONTENTS = "Managed by egg.runtime_fetcher; safe to delete.\n"
-
-try:
-    import yaml
-except ModuleNotFoundError as exc:  # pragma: no cover - import guard
-    raise ModuleNotFoundError(
-        "PyYAML is required to use the runtime fetcher. Install with 'pip install PyYAML'"
-    ) from exc
 
 logger = logging.getLogger(__name__)
 
@@ -237,22 +231,12 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
     """
 
     manifest_path = Path(manifest_path)
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        manifest = yaml.safe_load(f)
-    if manifest is None:
-        manifest = {}
-    if not isinstance(manifest, dict):
-        raise ValueError("Manifest root must be a mapping")
-
-    deps = manifest.get("dependencies", [])
+    deps = load_manifest_dependencies(manifest_path)
     if deps is None:
         return []
-    if not isinstance(deps, list):
-        raise ValueError("'dependencies' must be a list")
 
     manifest_dir = manifest_path.parent.resolve()
     resolved: List[Path | str] = []
-    seen: set[str] = set()
     # Track sanitized container filenames to avoid collisions when
     # downloading multiple images that differ only by characters replaced
     # during sanitization. Mapping allows us to report the original conflicting
@@ -262,11 +246,6 @@ def fetch_runtime_blocks(manifest_path: Path | str) -> List[Path | str]:
     cache_dir: Path | None = None
 
     for dep in deps:
-        if not isinstance(dep, str):
-            raise ValueError("dependency entries must be strings")
-        if dep in seen:
-            raise ValueError(f"Duplicate dependency entry: {dep}")
-        seen.add(dep)
         if ":" in dep:
             if "\\" in dep:
                 raise ValueError(f"Invalid container image name: {dep}")
