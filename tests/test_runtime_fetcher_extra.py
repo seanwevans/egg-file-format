@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 import egg.runtime_fetcher as rf
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from egg.runtime_fetcher import fetch_runtime_blocks  # noqa: E402
@@ -59,7 +60,9 @@ def test_manifest_root_not_mapping(tmp_path: Path) -> None:
         fetch_runtime_blocks(manifest)
 
 
-def test_fetch_runtime_uses_manifest_dependency_loader(monkeypatch, tmp_path: Path) -> None:
+def test_fetch_runtime_uses_manifest_dependency_loader(
+    monkeypatch, tmp_path: Path
+) -> None:
     manifest = tmp_path / "manifest.yaml"
     manifest.write_text("dependencies: null\n")
     called = []

@@ -92,6 +92,8 @@ def load_manifest_dependencies(path: Path | str) -> List[str] | None:
     """Load and validate only the ``dependencies`` section of a manifest."""
     data = _load_manifest_yaml(path)
     return _validate_dependencies(data.get("dependencies"))
+
+
 _SPDX_TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]*\+?$")
 
 
