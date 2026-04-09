@@ -15,6 +15,7 @@ from importlib.metadata import entry_points
 
 __all__ = [
     "_is_relative_to",
+    "validate_lang_command",
     "get_lang_command",
     "DEFAULT_LANG_COMMANDS",
     "load_plugins",
@@ -48,13 +49,41 @@ DEFAULT_LANG_COMMANDS = {
 }
 
 
+def validate_lang_command(cmd: object, lang: str) -> list[str]:
+    """Validate and return a runtime command for ``lang``.
+
+    ``cmd`` must be a non-empty list of non-empty strings, and the executable
+    entry (index 0) must not be whitespace-only.
+    """
+
+    if not isinstance(cmd, list) or not cmd:
+        raise ValueError(
+            f"Invalid command for '{lang}': expected a non-empty list of strings"
+        )
+    if not all(isinstance(part, str) and part != "" for part in cmd):
+        raise ValueError(
+            f"Invalid command for '{lang}': expected a non-empty list of non-empty strings"
+        )
+    if cmd[0].strip() == "":
+        raise ValueError(
+            f"Invalid command for '{lang}': executable entry cannot be whitespace-only"
+        )
+    return cmd
+
+
 def get_lang_command(lang: str) -> list[str] | None:
     """Return the command list for ``lang`` respecting environment overrides."""
 
     override = os.getenv(f"EGG_CMD_{lang.upper()}")
     if override:
-        return shlex.split(override)
-    return DEFAULT_LANG_COMMANDS.get(lang)
+        return validate_lang_command(
+            shlex.split(override),
+            f"{lang} (from EGG_CMD_{lang.upper()})",
+        )
+    cmd = DEFAULT_LANG_COMMANDS.get(lang)
+    if cmd is None:
+        return None
+    return validate_lang_command(cmd, lang)
 
 
 def load_plugins() -> None:
@@ -85,20 +114,19 @@ def load_plugins() -> None:
                 )
             else:
                 for lang, cmd in extra.items():
-                    if not (
-                        isinstance(lang, str)
-                        and isinstance(cmd, list)
-                        and all(isinstance(c, str) for c in cmd)
-                    ):
-                        logger.warning(
-                            "Runtime plug-in %s returned invalid mapping for %r",
-                            ep.name,
-                            lang,
+                    if not isinstance(lang, str):
+                        raise ValueError(
+                            f"Runtime plug-in '{ep.name}' returned non-string language key: {lang!r}"
                         )
-                        continue
-                    DEFAULT_LANG_COMMANDS[lang] = cmd
+                    validated = validate_lang_command(
+                        cmd,
+                        f"{lang} (from runtime plug-in '{ep.name}')",
+                    )
+                    DEFAULT_LANG_COMMANDS[lang] = validated
             LOADED_RUNTIME_PLUGINS.add(ep.name)
             logger.debug("[plugins] loaded runtime %s", ep.name)
+        except ValueError:
+            raise
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading runtime plug-in %s: %s", ep.name, exc)
 
@@ -113,7 +141,7 @@ def load_plugins() -> None:
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Failed loading agent plug-in %s: %s", ep.name, exc)
 
-    if not runtime_eps and "ruby" not in DEFAULT_LANG_COMMANDS:
+    if "ruby" not in DEFAULT_LANG_COMMANDS:
         try:  # pragma: no cover - fallback when package not installed
             from examples import ruby_plugin
         except Exception as exc:  # pragma: no cover - defensive fallback
@@ -122,9 +150,8 @@ def load_plugins() -> None:
             extra = ruby_plugin.register()
             if isinstance(extra, dict):
                 for lang, cmd in extra.items():
-                    if (
-                        isinstance(lang, str)
-                        and isinstance(cmd, list)
-                        and all(isinstance(c, str) for c in cmd)
-                    ):
-                        DEFAULT_LANG_COMMANDS[lang] = cmd
+                    if isinstance(lang, str):
+                        DEFAULT_LANG_COMMANDS[lang] = validate_lang_command(
+                            cmd,
+                            f"{lang} (from examples.ruby_plugin)",
+                        )
