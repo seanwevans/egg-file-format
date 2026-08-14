@@ -137,7 +137,8 @@ targets without deleting them.
 | `EGG_CMD_PYTHON` | Command executed for Python cells |
 | `EGG_CMD_R` | Command executed for R cells |
 | `EGG_CMD_BASH` | Command executed for Bash cells |
-| `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
+| `EGG_PRIVATE_KEY` | Ed25519 private key seed used to sign `hashes.yaml` when `--private-key` is not given |
+| `EGG_PUBLIC_KEY` | Ed25519 public key used to verify `hashes.sig` when `--public-key` is not given |
 | `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
 | `EGG_DOWNLOAD_TIMEOUT` | Default timeout (seconds) for runtime downloads |
 
