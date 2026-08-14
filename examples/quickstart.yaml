@@ -1,0 +1,5 @@
+name: "Quick Start"
+description: "Single Python cell, runnable with no extra runtimes installed"
+cells:
+  - language: python
+    source: hello.py
