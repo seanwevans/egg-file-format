@@ -20,7 +20,23 @@
 - **Scalable:** Designed for GB–TB scale data with instant loading.
 - **Audit & provenance:** Full build logs and environment info baked in.
 
-*This repository implements a minimal prototype with additional agents for fetching runtimes, sandboxing, precomputing outputs and deterministic chunking. The broader features above are planned for future releases.*
+> **These are the project's goals, not its current state.** This repository is a
+> prototype. What works today: composing an archive, SHA-256 hashing every
+> member, Ed25519-signing and verifying it, resolving runtime dependencies,
+> precomputing cell outputs, and running Python, R, and Bash cells, with
+> additional languages registered through plug-ins.
+>
+> Two headline features are **not implemented**:
+>
+> - **Sandboxing.** `egg hatch` runs cells as ordinary subprocesses on the host
+>   with no isolation and no resource limits. The sandboxer writes placeholder
+>   image files that are never booted. Do not hatch eggs you do not trust — see
+>   [SECURITY.md](SECURITY.md).
+> - **Deterministic chunking.** `egg/chunker.py` is not wired into the build
+>   pipeline; assets are hashed whole.
+>
+> Manifest `permissions` are parsed and displayed but not enforced. See
+> [ROADMAP.md](ROADMAP.md) for the milestones that deliver these.
 
 ---
 

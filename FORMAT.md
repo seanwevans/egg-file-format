@@ -60,7 +60,7 @@ The builder consumes a YAML manifest. `name`, `description`, and `cells` are req
 | `created`   | Timestamp when the egg was built.                     | Stored in the manifest header.         |
 | `license`   | SPDX license identifier for the notebook content.     | Stored in the manifest.                |
 | `dependencies` | List of runtime block identifiers.                 | Guides the runtime block fetcher.      |
-| `permissions` | Mapping of permission names to boolean values.      | Enforced by the sandboxer at hatch time. |
+| `permissions` | Mapping of permission names to boolean values.      | Intended to be enforced by the sandboxer at hatch time; **not yet enforced** (see SECURITY.md). |
 
 Dependency entries may be relative file paths or container image
 specifications like ``python:3.11``. Paths are validated to exist on disk while
