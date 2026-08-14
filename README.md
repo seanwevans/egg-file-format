@@ -116,13 +116,27 @@ egg hatch --egg advanced.egg
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
-egg hatch  --egg <egg> [--no-sandbox]
-egg verify --egg <egg> [--signing-key <file>]
-egg info   --egg <egg>
+egg [--version] [-v | -vv] <command> [options]
+
+egg build   [-m|--manifest <file>] [-o|--output <egg>] [-f|--force]
+            [--precompute] [--precompute-timeout <seconds>]
+            [--private-key <file>] [--public-key <file>]
+egg hatch   [-e|--egg <egg>] [--no-sandbox] [--public-key <file>]
+egg verify  [-e|--egg <egg>] [--public-key <file>]
+egg info    [-e|--egg <egg>] [--public-key <file>]
 egg languages
-egg clean  [path] [--dry-run]
+egg clean   [path] [--dry-run]
 ```
+
+Defaults: `--manifest` is `manifest.yaml`, `--output` and `--egg` are `out.egg`,
+and `clean` scans the current directory. `build` refuses to overwrite an
+existing output file unless `--force` is given. `-v` raises logging to info and
+`-vv` to debug.
+
+Signing keys are read from key files. `--private-key` signs `hashes.yaml` at
+build time; `--public-key` verifies `hashes.sig` and is accepted by `build`,
+`hatch`, `verify`, and `info`. Both fall back to environment variables when
+omitted — see [Environment Variables](#environment-variables).
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
 
