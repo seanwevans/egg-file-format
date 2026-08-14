@@ -21,7 +21,7 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 BUILTIN_LANGUAGES = {"python", "r", "bash"}
 
 #: Manifests the README presents as runnable with a stock install.
-STOCK_MANIFESTS = ("manifest.yaml", "advanced_manifest.yaml")
+STOCK_MANIFESTS = ("quickstart.yaml", "manifest.yaml", "advanced_manifest.yaml")
 
 #: Manifests the README flags as requiring runtime plug-ins.
 PLUGIN_MANIFESTS = ("julia_manifest.yaml", "dozen_manifest.yaml")

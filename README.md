@@ -42,11 +42,15 @@
 
 ## Quick Start
 
+**Prerequisites:** Python 3.8 or newer, and nothing else. The quick start uses
+a Python-only manifest so it runs on a bare machine; the other examples need
+extra runtimes installed, as listed [below](#which-languages-actually-run).
+
 Install the CLI and build the demo archive:
 
 ```bash
 pip install -e .  # install in editable mode to load example plug-ins
-egg build --manifest examples/manifest.yaml --output demo.egg --precompute
+egg build --manifest examples/quickstart.yaml --output demo.egg --precompute
 egg hatch --egg demo.egg
 egg verify --egg demo.egg
 egg info --egg demo.egg
@@ -66,6 +70,7 @@ Two example manifests declare languages that are *not* built in:
 
 | Manifest | Languages | Runs with a stock install? |
 |----------|-----------|----------------------------|
+| `examples/quickstart.yaml` | python | Yes, no extra runtimes |
 | `examples/manifest.yaml` | python, r | Yes, with `Rscript` installed |
 | `examples/advanced_manifest.yaml` | python, bash, r | Yes, with `Rscript` installed |
 | `examples/julia_manifest.yaml` | julia | No — needs a `julia` runtime plug-in |
