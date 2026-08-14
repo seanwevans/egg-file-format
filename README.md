@@ -39,8 +39,35 @@ egg clean .
 A file `<source>.out` is created for each executed cell containing stdout. If a
 cell fails, its stderr is written to `<source>.err` for later inspection.
 
-For a Julia example see `examples/julia_manifest.yaml`.
-A full manifest mixing twelve languages is provided in `examples/dozen_manifest.yaml`.
+### Which languages actually run
+
+Three runtimes are built in: **python**, **r**, and **bash**. Any other
+language must be registered by a runtime plug-in before an egg using it can be
+hatched — see [Writing Plug-ins](#writing-plug-ins). Run `egg languages` to list
+what your installation currently supports.
+
+Two example manifests declare languages that are *not* built in:
+
+| Manifest | Languages | Runs with a stock install? |
+|----------|-----------|----------------------------|
+| `examples/manifest.yaml` | python, r | Yes, with `Rscript` installed |
+| `examples/advanced_manifest.yaml` | python, bash, r | Yes, with `Rscript` installed |
+| `examples/julia_manifest.yaml` | julia | No — needs a `julia` runtime plug-in |
+| `examples/dozen_manifest.yaml` | twelve, incl. go, rust, tcl | No — needs plug-ins for nine of them |
+
+These two are illustrations of the intended multi-language model, not working
+demos. `egg build` still succeeds for them, because cell languages are not
+validated while composing the archive; the failure appears at
+`egg build --precompute` or `egg hatch`:
+
+```
+$ egg hatch --egg julia.egg
+Unsupported language: julia
+```
+
+Note that the compiled languages in `dozen_manifest.yaml` (Go, Rust) cannot be
+expressed at all today: a runtime is a command that is handed a source file, so
+there is no way to describe a compile-then-run step.
 The example plug-ins used above are described in [AGENTS.md](AGENTS.md#plug-in-development).
 
 ## Writing Plug-ins
