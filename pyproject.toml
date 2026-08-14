@@ -22,5 +22,5 @@ hello = "examples.hello_agent:register"
 ruby = "examples.ruby_plugin:register"
 
 [tool.setuptools]
-packages = ["egg"]
+packages = ["egg", "examples"]
 py-modules = ["egg_cli"]
