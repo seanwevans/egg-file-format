@@ -95,7 +95,3 @@ keys recorded in ``hashes.yaml``.  The signing key defaults to
 ``"egg-signing-key"`` but may be overridden via the ``EGG_SIGNING_KEY``
 environment variable during build and verification.
 
----
-
-See [AGENTS.md](AGENTS.md) for agent/pipeline roles.
-
