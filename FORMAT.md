@@ -60,7 +60,7 @@ The builder consumes a YAML manifest. `name`, `description`, and `cells` are req
 | `created`   | Timestamp when the egg was built.                     | Stored in the manifest header.         |
 | `license`   | SPDX license identifier for the notebook content.     | Stored in the manifest.                |
 | `dependencies` | List of runtime block identifiers.                 | Guides the runtime block fetcher.      |
-| `permissions` | Mapping of permission names to boolean values.      | Enforced by the sandboxer at hatch time. |
+| `permissions` | Mapping of permission names to boolean values.      | Intended to be enforced by the sandboxer at hatch time; **not yet enforced** (see SECURITY.md). |
 
 Dependency entries may be relative file paths or container image
 specifications like ``python:3.11``. Paths are validated to exist on disk while
@@ -88,14 +88,31 @@ manifest but are not bundled into the egg.
 ### Hash Records
 
 Every archive includes a ``hashes.yaml`` file listing the SHA256 digest of each
-member as ``path: digest`` pairs.  The file itself is authenticated by
-``hashes.sig`` which contains an HMAC-SHA256 signature.  Verifiers must check
-both the signature and that the set of files in the archive exactly matches the
-keys recorded in ``hashes.yaml``.  The signing key defaults to
-``"egg-signing-key"`` but may be overridden via the ``EGG_SIGNING_KEY``
-environment variable during build and verification.
+member as ``path: digest`` pairs.  Keys are sorted so the file is byte-identical
+across builds.  The file itself is authenticated by ``hashes.sig``, which
+contains a hex-encoded **Ed25519** signature over the raw bytes of
+``hashes.yaml``.
 
----
+Verifiers must check all of the following:
 
-See [AGENTS.md](AGENTS.md) for agent/pipeline roles.
+- the signature over ``hashes.yaml`` validates against the trusted public key;
+- every digest recorded in ``hashes.yaml`` matches the corresponding archive
+  member;
+- the set of files in the archive exactly matches the keys recorded in
+  ``hashes.yaml``, plus ``hashes.yaml`` and ``hashes.sig`` themselves;
+- no member name is absolute or contains a ``..`` component, and no name
+  appears twice.
+
+Keys are passed as raw key files: ``egg build`` accepts ``--private-key``, and
+``build``, ``hatch``, ``verify``, and ``info`` all accept ``--public-key``.  A
+key that is not exactly 32 bytes is reduced to 32 bytes with SHA-256; a 64-byte
+public key is first interpreted as hex.  When no flag is given the private key
+falls back to the ``EGG_PRIVATE_KEY`` environment variable and the public key to
+``EGG_PUBLIC_KEY``.
+
+> **The built-in defaults are for development only.**  When neither a flag nor
+> an environment variable is set, both signing and verification fall back to the
+> constant seed ``"egg-signing-key"`` that ships in this repository.  Anyone can
+> produce a signature that verifies against it, so ``egg verify`` says nothing
+> about provenance unless you pass a ``--public-key`` you actually trust.
 

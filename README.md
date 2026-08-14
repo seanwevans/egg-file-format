@@ -20,7 +20,23 @@
 - **Scalable:** Designed for GB–TB scale data with instant loading.
 - **Audit & provenance:** Full build logs and environment info baked in.
 
-*This repository implements a minimal prototype with additional agents for fetching runtimes, sandboxing, precomputing outputs and deterministic chunking. The broader features above are planned for future releases.*
+> **These are the project's goals, not its current state.** This repository is a
+> prototype. What works today: composing an archive, SHA-256 hashing every
+> member, Ed25519-signing and verifying it, resolving runtime dependencies,
+> precomputing cell outputs, and running Python, R, and Bash cells, with
+> additional languages registered through plug-ins.
+>
+> Two headline features are **not implemented**:
+>
+> - **Sandboxing.** `egg hatch` runs cells as ordinary subprocesses on the host
+>   with no isolation and no resource limits. The sandboxer writes placeholder
+>   image files that are never booted. Do not hatch eggs you do not trust — see
+>   [SECURITY.md](SECURITY.md).
+> - **Deterministic chunking.** `egg/chunker.py` is not wired into the build
+>   pipeline; assets are hashed whole.
+>
+> Manifest `permissions` are parsed and displayed but not enforced. See
+> [ROADMAP.md](ROADMAP.md) for the milestones that deliver these.
 
 ---
 
@@ -109,9 +125,7 @@ pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
-See [examples/](examples/) for sample plug-ins and
-[AGENTS.md](AGENTS.md#plug-in-development) for more on agent architecture
-and plug-in development.
+See [examples/](examples/) for sample plug-ins.
 
 ## Advanced Usage
 
@@ -143,13 +157,27 @@ egg hatch --egg advanced.egg
 ## CLI Overview
 
 ```bash
-egg build  --manifest <file> --output <egg> [--precompute] [--signing-key <file>]
-egg hatch  --egg <egg> [--no-sandbox]
-egg verify --egg <egg> [--signing-key <file>]
-egg info   --egg <egg>
+egg [--version] [-v | -vv] <command> [options]
+
+egg build   [-m|--manifest <file>] [-o|--output <egg>] [-f|--force]
+            [--precompute] [--precompute-timeout <seconds>]
+            [--private-key <file>] [--public-key <file>]
+egg hatch   [-e|--egg <egg>] [--no-sandbox] [--public-key <file>]
+egg verify  [-e|--egg <egg>] [--public-key <file>]
+egg info    [-e|--egg <egg>] [--public-key <file>]
 egg languages
-egg clean  [path] [--dry-run]
+egg clean   [path] [--dry-run]
 ```
+
+Defaults: `--manifest` is `manifest.yaml`, `--output` and `--egg` are `out.egg`,
+and `clean` scans the current directory. `build` refuses to overwrite an
+existing output file unless `--force` is given. `-v` raises logging to info and
+`-vv` to debug.
+
+Signing keys are read from key files. `--private-key` signs `hashes.yaml` at
+build time; `--public-key` verifies `hashes.sig` and is accepted by `build`,
+`hatch`, `verify`, and `info`. Both fall back to environment variables when
+omitted — see [Environment Variables](#environment-variables).
 
 Use `egg <command> -h` to see all options. Runtime commands and other settings can be configured via environment variables; see [Environment Variables](#environment-variables).
 
@@ -164,7 +192,8 @@ targets without deleting them.
 | `EGG_CMD_PYTHON` | Command executed for Python cells |
 | `EGG_CMD_R` | Command executed for R cells |
 | `EGG_CMD_BASH` | Command executed for Bash cells |
-| `EGG_SIGNING_KEY` | HMAC key used to sign `hashes.yaml` |
+| `EGG_PRIVATE_KEY` | Ed25519 private key seed used to sign `hashes.yaml` when `--private-key` is not given |
+| `EGG_PUBLIC_KEY` | Ed25519 public key used to verify `hashes.sig` when `--public-key` is not given |
 | `EGG_REGISTRY_URL` | Registry base URL for runtime downloads |
 | `EGG_DOWNLOAD_TIMEOUT` | Default timeout (seconds) for runtime downloads |
 
@@ -182,7 +211,6 @@ and updates the README badges.
 
 ## More Documentation
 
-- [AGENTS.md](AGENTS.md) – build pipeline and agent design
 - [FORMAT.md](FORMAT.md) – egg file format specification
 - [SECURITY.md](SECURITY.md) – sandboxing and threat model
 - [ROADMAP.md](ROADMAP.md) – planned features
