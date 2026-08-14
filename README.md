@@ -41,7 +41,8 @@ cell fails, its stderr is written to `<source>.err` for later inspection.
 
 For a Julia example see `examples/julia_manifest.yaml`.
 A full manifest mixing twelve languages is provided in `examples/dozen_manifest.yaml`.
-The example plug-ins used above are described in [AGENTS.md](AGENTS.md#plug-in-development).
+The example plug-ins used above live in [examples/](examples/); see
+[Writing Plug-ins](#writing-plug-ins) below.
 
 ## Writing Plug-ins
 
@@ -82,9 +83,7 @@ pip install my-egg-plugin
 egg -vv --help  # shows "[plugins] loaded ..." messages
 ```
 
-See [examples/](examples/) for sample plug-ins and
-[AGENTS.md](AGENTS.md#plug-in-development) for more on agent architecture
-and plug-in development.
+See [examples/](examples/) for sample plug-ins.
 
 ## Advanced Usage
 
@@ -170,7 +169,6 @@ and updates the README badges.
 
 ## More Documentation
 
-- [AGENTS.md](AGENTS.md) – build pipeline and agent design
 - [FORMAT.md](FORMAT.md) – egg file format specification
 - [SECURITY.md](SECURITY.md) – sandboxing and threat model
 - [ROADMAP.md](ROADMAP.md) – planned features

@@ -116,7 +116,3 @@ falls back to the ``EGG_PRIVATE_KEY`` environment variable and the public key to
 > produce a signature that verifies against it, so ``egg verify`` says nothing
 > about provenance unless you pass a ``--public-key`` you actually trust.
 
----
-
-See [AGENTS.md](AGENTS.md) for agent/pipeline roles.
-
